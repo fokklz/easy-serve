@@ -1,0 +1,43 @@
+version: "3.8"
+
+services:
+  wordpress:
+    image: wordpress:latest
+    restart: unless-stopped
+    environment:
+      WORDPRESS_DB_HOST: mysql
+      WORDPRESS_DB_USER: ${NAME}
+      WORDPRESS_DB_PASSWORD: ${MYSQL_PASSWORD}
+      WORDPRESS_DB_NAME: ${NAME}
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.${NAME}.rule=Host(`${DOMAIN}`)
+      - traefik.http.routers.${NAME}.entrypoints=websecure
+      - traefik.http.routers.${NAME}.tls.certresolver=letsencrypt
+    volumes:
+      - ./wordpress:/var/www/html
+    depends_on:
+      - mysql
+    networks:
+      - traefik_network
+      - wordpress
+      
+  mysql:
+    image: mysql:latest
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${NAME}
+      MYSQL_USER: ${NAME}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+    volumes:
+      - mysql-data:/var/lib/mysql
+    networks:
+      - wordpress
+
+volumes:
+  mysql-data: {}
+
+networks:
+  wordpress: {}
+  traefik_network:
+    external: true
