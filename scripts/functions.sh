@@ -30,7 +30,7 @@ loading_spinner() {
     printf '\r%*s' $cols
     printf '\r'
     # Display the finish message (essentially empty line + message (filled empty))
-    printf "$(printf '%*s' $cols)\n${COLOR_GREEN}✓${COLOR_RESET} ${finish}\n$(printf '%*s' $cols)\r"
+    printf "$(printf '%*s' $cols)\n${COLOR_GREEN}✓${COLOR_RESET} ${finish}$(printf '%*s' $cols)\r"
 }
 
 # Function to ask for user input based on a message, a regex pattern, an optional default value, and a variable to store the input
