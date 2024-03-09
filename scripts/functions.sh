@@ -34,6 +34,7 @@ loading_spinner() {
 }
 
 # Function to ask for user input based on a message, a regex pattern, an optional default value, and a variable to store the input
+# Function to ask for user input based on a message, a regex pattern, an optional default value, and a variable to store the input
 ask_input() {
     local prompt_message="$1"
     local regex_pattern="$2"
@@ -42,10 +43,17 @@ ask_input() {
     local user_input=""
 
     while true; do
-        echo -n "${prompt_message}"
-        [[ -n "$default_value" && -z "$user_input" ]] && echo -n -e " [${COLOR_CYAN}${default_value}${COLOR_RESET}]"
-        echo -n ": "
-        read user_input
+        if [ -t 0 ]; then # Check if stdin is a terminal
+            # Prompt for user input interactively
+            echo -n "${prompt_message}"
+            [[ -n "$default_value" && -z "$user_input" ]] && echo -n " [${default_value}]"
+            echo -n ": "
+            read user_input </dev/tty
+        else
+            # Non-interactive mode, use the default value
+            echo "Non-interactive mode: Using the default value for ${variable_name}"
+            user_input=${default_value}
+        fi
 
         # Use default if no input is given and it's the first iteration
         [[ -z "$user_input" && -n "$default_value" ]] && user_input="$default_value"
@@ -55,6 +63,11 @@ ask_input() {
             declare -g "$variable_name=$user_input"
             break
         else
+            # In non-interactive mode, exit the loop if the default value doesn't match the pattern
+            if [ ! -t 0 ]; then
+                echo "The default value for ${variable_name} does not match the required pattern."
+                return 1 # Exit with an error status
+            fi
             echo "Invalid input, please try again." >&2
             user_input="" # Reset user_input to show default value prompt again if needed
         fi
