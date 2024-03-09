@@ -9,3 +9,4 @@ instances
 
 .vscode
 .env
+.env.*

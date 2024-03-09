@@ -1,6 +1,6 @@
 apt install -y git
 
-git clone https://github.com/fokklz/easy-serve.git "${1:-easy-serve}"
+git clone https://github.com/fokklz/easy-serve.git "${NAME:-easy-serve}"
 
-chmod +x easy-serve/scripts/setup.sh
-bash easy-serve/scripts/setup.sh
+chmod +x "${NAME:-easy-serve}/scripts/setup.sh"
+bash "${NAME:-easy-serve}/scripts/setup.sh" </dev/tty
