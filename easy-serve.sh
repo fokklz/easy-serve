@@ -48,11 +48,23 @@ select_and_perform_action() {
 }
 
 if [[ "${HELP:-false}" == true ]]; then
-    echo -e "Usage: \n manage.sh - performe a action on a instance\n manage.sh create - create a new instance\n manage.sh <instance> <type> - performe a action on a instance"
+    COMMAND="$0"
+    if [[ "$COMMAND" == */* ]]; then
+        COMMAND=$(basename "$COMMAND")
+    fi
+
+    echo -e "Usage:"
+    echo -e "$COMMAND - perform an action on an instance"
+    echo -e "$COMMAND create - create a new instance"
+    echo -e "$COMMAND <name> <type> - perform an action on an instance"
     exit 0
 fi
 
 if [ $# -lt 1 ]; then
+    if [ -z "$(ls -A "${INSTANCE_ROOT}")" ]; then
+        error "No Instances found. ${COLOR_RESET}\nUse $(mark "easy-serve create") to create a new instance."
+    fi
+
     # Select the instance and type
     IFS='/' read -r type instance <<<$(select_instance)
 

@@ -5,9 +5,9 @@ services:
     container_name: traefik
     restart: unless-stopped
     ports:
-      - "185.242.113.62:80:80"
-      - "185.242.113.62:443:443"
-      - "134.255.247.54:22:22"
+      - "${HTTP_IP_ADDRESS:-185.242.113.62}:80:80"
+      - "${HTTP_IP_ADDRESS:-185.242.113.62}:443:443"
+      - "${SFTP_IP_ADDRESS:-134.255.247.54}:${SFTP_PORT:-22}:22"
       - "127.0.0.1:8080:8080"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
@@ -18,7 +18,7 @@ services:
       - ./certs:/certs:ro
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.dashboard.rule=Host(`traefik.fokklz.dev`)"
+      - "traefik.http.routers.dashboard.rule=Host(`traefik.${DOMAIN:-fokklz.dev}`)"
       - "traefik.http.routers.dashboard.tls=true"
       - "traefik.http.routers.dashboard.tls.certresolver=letsencrypt"
       - "traefik.http.routers.dashboard.entrypoints=websecure"

@@ -8,3 +8,4 @@ instances
 **/users.conf
 
 .vscode
+.env

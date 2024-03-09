@@ -30,7 +30,7 @@ source "${SCRIPTS_DIR}/globals.sh"
 
 (
     cd ${INSTANCE_ROOT}
-    docker compose up -d > /dev/null 2>&1
+    docker compose up -d
 ) & loading_spinner "Starting \$(mark "$NAME")..." "Started \$(mark "$NAME") successfully."
 EOF
     chmod +x start.sh
@@ -48,7 +48,7 @@ source "${SCRIPTS_DIR}/globals.sh"
 
 (
     cd ${INSTANCE_ROOT}
-    docker compose down > /dev/null 2>&1
+    docker compose down
 ) & loading_spinner "Stopping \$(mark "$NAME")..." "Stopped \$(mark "$NAME") successfully."
 EOF
     chmod +x stop.sh
