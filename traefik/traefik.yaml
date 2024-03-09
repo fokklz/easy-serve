@@ -1,0 +1,49 @@
+entryPoints:
+  web:
+    address: ':80'
+
+  metrics:
+    address: ':8080'
+
+  websecure:
+    address: ':443'
+
+  sftp:
+    address: ':22'
+
+docker:
+  network: traefik_network
+
+providers:
+  file:
+    filename: /dynamic.yaml
+  docker:
+    endpoint: 'unix:///var/run/docker.sock'
+    exposedByDefault: false
+
+api:
+  dashboard: true
+  insecure: false
+
+log:
+  level: 'INFO'
+  format: 'json'
+
+certificatesResolvers:
+  letsencrypt:
+    acme:
+      email: 'not-configured@no-reply.com' # REPLACE: Email
+      storage: '/letsencrypt/acme.json'
+      httpChallenge:
+        entryPoint: 'web'
+
+metrics:
+  prometheus:
+    buckets:
+      - 0.1
+      - 0.3
+      - 1.2
+      - 5.0
+    addEntryPointsLabels: true
+    addRoutersLabels: true
+    entryPoint: 'metrics'

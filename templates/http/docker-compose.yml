@@ -1,0 +1,19 @@
+version: "3.8"
+
+services:
+  httpd:
+    image: httpd:2.4
+    restart: unless-stopped
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.${INSTANCE_NAME}.rule=Host(`${INSTANCE_DOMAIN}`)
+      - traefik.http.routers.${INSTANCE_NAME}.entrypoints=websecure
+      - traefik.http.routers.${INSTANCE_NAME}.tls.certresolver=letsencrypt
+    volumes:
+      - ./webroot:/usr/local/apache2/htdocs/
+    networks:
+      - traefik_network
+
+networks:
+  traefik_network:
+    external: true

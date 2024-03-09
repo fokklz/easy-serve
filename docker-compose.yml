@@ -1,0 +1,48 @@
+version: "3.8"
+services:
+  traefik:
+    image: traefik:v2.5
+    container_name: traefik
+    restart: unless-stopped
+    ports:
+      - "185.242.113.62:80:80"
+      - "185.242.113.62:443:443"
+      - "134.255.247.54:22:22"
+      - "127.0.0.1:8080:8080"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./traefik/dynamic.yaml:/dynamic.yaml:ro
+      - ./traefik/traefik.yaml:/traefik.yaml:ro
+      - ./traefik/letsencrypt:/letsencrypt
+      - ./traefik/logs:/logs
+      - ./certs:/certs:ro
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.dashboard.rule=Host(`traefik.fokklz.dev`)"
+      - "traefik.http.routers.dashboard.tls=true"
+      - "traefik.http.routers.dashboard.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.dashboard.entrypoints=websecure"
+      - "traefik.http.routers.dashboard.service=api@internal"
+      - "traefik.http.routers.dashboard.tls.options=mtls@file"
+    networks:
+      - internal
+      - traefik_network
+  sftp:
+    image: atmoz/sftp
+    container_name: sftp
+    restart: unless-stopped
+    labels:
+      - "traefik.enable=true"
+      - "traefik.tcp.routers.sftp.rule=HostSNI(`*`)"
+      - "traefik.tcp.routers.sftp.entrypoints=sftp"
+      - "traefik.tcp.routers.sftp.service=sftp"
+      - "traefik.tcp.services.sftp.loadbalancer.server.port=22"
+    volumes:
+      - ./sftp/keys/ssh_host_ed25519_key:/etc/ssh/ssh_host_ed25519_key:ro
+      - ./sftp/users.conf:/etc/sftp/users.conf:ro
+    networks:
+      - traefik_network
+networks:
+  internal: {}
+  traefik_network:
+    external: true

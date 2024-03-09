@@ -1,0 +1,10 @@
+tls:
+  options:
+    default:
+      minVersion: VersionTLS12
+    mtls: # This is the mTLS configuration we're applying to the dashboard
+      minVersion: VersionTLS12
+      clientAuth:
+        caFiles:
+          - '/certs/ca.crt' # Path to the CA certificate inside the container
+        clientAuthType: RequireAndVerifyClientCert

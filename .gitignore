@@ -1,0 +1,10 @@
+**/logs
+**/letsencrypt
+
+certs
+instances
+
+**/keys
+**/users.conf
+
+.vscode
