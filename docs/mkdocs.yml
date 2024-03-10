@@ -1,0 +1,6 @@
+site_name: EasyServe Docs
+theme:
+  name: 'material'
+plugins:
+  - search
+  - awesome-pages

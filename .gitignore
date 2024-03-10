@@ -10,3 +10,5 @@ instances
 .vscode
 .env
 .env.*
+
+docs/site
