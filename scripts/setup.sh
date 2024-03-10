@@ -10,6 +10,7 @@ set_domain=""
 source "${DIR}/globals.sh"
 
 if [ -f "${DIR}/../.env" ]; then
+    rm -f "${ROOT}/install.sh" >/dev/null 2>&1
     error "Seems to be already installed. Exiting."
 fi
 
