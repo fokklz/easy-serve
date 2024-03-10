@@ -40,7 +40,7 @@ EOF
   "name": "${USER} - ${DOMAIN}",
   "host": "sftp.${DOMAIN}",
   "protocol": "sftp",
-  "port": 22,
+  "port": ${SFTP_PORT:-22},
   "username": "${USER}",
   "password": "${PASSWORD}",
   "remotePath": "webroot",

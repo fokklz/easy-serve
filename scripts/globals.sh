@@ -6,8 +6,6 @@
 
 SCRIPTS_DIR=$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")
 
-DOMAIN="fokklz.dev"
-
 # Root directories
 ROOT=$(dirname "${SCRIPTS_DIR}")
 TEMPLATE_ROOT="${ROOT}/templates"
@@ -30,6 +28,10 @@ SFTP_USERS_FILE="${SFTP_ROOT}/users.conf"
 SFTP_KEYS_DIR="${SFTP_ROOT}/keys"
 
 source "${SCRIPTS_DIR}/colors.sh"
+
+if [ -f "${ROOT}/.env" ]; then
+    source "${ROOT}/.env"
+fi
 
 # Contains all arguments passed to the script not starting with --
 ARGS=()

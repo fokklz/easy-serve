@@ -60,4 +60,4 @@ Contributions are welcome! If you'd like to improve Easy Serve, feel free to for
 
 ## License
 
-This project is licensed under the Apache License 2.0 - see the [LICENSE](LICENSE) file for details.
+This project is licensed under the Apache License 2.0 - see the [LICENSE](https://github.com/fokklz/easy-serve?tab=Apache-2.0-1-ov-file) file for details.

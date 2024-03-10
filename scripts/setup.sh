@@ -76,6 +76,13 @@ if ! docker network inspect traefik_network >/dev/null 2>&1; then
     docker network create traefik_network
 fi
 
+cat >"${ROOT}/.env" <<EOF
+HTTP_IP_ADDRESS="${http_ip_address}"
+SFTP_IP_ADDRESS="${sftp_ip_address}"
+SFTP_PORT="${sftp_port}"
+DOMAIN="${set_domain}"
+EOF
+
 bash "${SCRIPTS_DIR}/security/gen-ca-cert.sh"
 bash "${SCRIPTS_DIR}/security/gen-host-key.sh"
 bash "${SCRIPTS_DIR}/security/rotate-client-cert.sh"
@@ -85,13 +92,6 @@ bash "${SCRIPTS_DIR}/security/rotate-client-cert.sh"
     docker compose up -d
 ) &
 loading_spinner "Starting..." "Started!"
-
-cat >"${ROOT}/.env" <<EOF
-HTTP_IP_ADDRESS="${http_ip_address}"
-SFTP_IP_ADDRESS="${sftp_ip_address}"
-SFTP_PORT="${sftp_port}"
-DOMAIN="${set_domain}"
-EOF
 
 chmod +x "${ROOT}/easy-serve.sh"
 
