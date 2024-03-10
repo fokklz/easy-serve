@@ -103,3 +103,5 @@ echo -e "Successfully installed $(mark "easy-serve") for $(mark "${set_domain}")
 echo -e "You can now use the $(mark "easy-serve") command to manage your instances."
 echo -e "Run $(mark "easy-serve --help") for more information."
 echo -e "You can access the traefik dashboard at $(mark "https://traefik.${set_domain}")"
+
+rm -f "${ROOT}/install.sh" >/dev/null 2>&1
