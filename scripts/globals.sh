@@ -5,6 +5,7 @@
 # This file contains global variables and funcctions which are used to streamline the scripts
 
 SCRIPTS_DIR=$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")
+source "${SCRIPTS_DIR}/colors.sh"
 
 # Root directories
 ROOT=$(dirname "${SCRIPTS_DIR}")
@@ -27,7 +28,21 @@ CA_KEY="${CERT_ROOT}/ca.key"
 SFTP_USERS_FILE="${SFTP_ROOT}/users.conf"
 SFTP_KEYS_DIR="${SFTP_ROOT}/keys"
 
-source "${SCRIPTS_DIR}/colors.sh"
+# Instance information
+INDEX_FILE="${INSTANCE_ROOT}/index.json"
+
+# REGEX patterns
+
+# DOMAINS
+# The pattern matches domain names that consist of one or more segments separated by periods.
+# Each segment can contain alphanumeric characters and hyphens, but cannot start or end with a hyphen.
+# The top-level domain (TLD) must consist of two or more alphabetical characters.
+DOMAIN_REGEX="^(([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]*[a-zA-Z0-9])\.)*([A-Za-z0-9]|[A-Za-z0-9][A-Za-z0-9\-]*[A-Za-z0-9])\.[A-Za-z]{2,}$"
+
+# NAMES
+# The pattern matches names that consist of alphanumeric characters, underscores, and hyphens.
+# The name cannot be empty.
+NAME_REGEX="^[A-Za-z0-9_-]+$"
 
 if [ -f "${ROOT}/.env" ]; then
     source "${ROOT}/.env"
@@ -57,7 +72,7 @@ source "${SCRIPTS_DIR}/functions.sh"
 function named_args() {
     local i=0
     local min_length=0
-    local usage="Usage: $0 "
+    local usage=""
     local clean_args=()
     local modifier=()
 
@@ -67,7 +82,7 @@ function named_args() {
             IFS='|' read -r arg modifier <<<"$arg"
             modifier+=("${modifier,,}")
         else
-            modifier+=("")
+            modifier+=("-")
         fi
 
         # when the name is uppercase, it is required
@@ -81,34 +96,33 @@ function named_args() {
         clean_args+=("$arg")
     done
 
+    declare -g "COMMAND_USAGE=${usage}"
+    if [ "${USAGE}" = true ]; then
+        echo "${COMMAND_USAGE}"
+        exit 0
+    fi
+
     for name in "${clean_args[@]}"; do
-        if [ $i -ge ${#ARGS[@]} ] && [ $i -ge $min_length ]; then
+
+        value="${ARGS[$i]}"
+
+        if [ -z "${value}" ]; then
             break
-        elif [ $i -ge ${#ARGS[@]} ] && [ $i -le $min_length ]; then
-            while [ -z "$value" ]; do
-                read -p "Enter a value for ${name,,}: " input
-                if [[ "$input" =~ [[:alnum:]_-]+ ]]; then
-                    value="$input"
-                else
-                    echo "Invalid input. Please enter a value consisting of alphanumeric characters, hyphens, or underscores."
-                fi
-            done
-        else
-            value="${ARGS[$i]}"
         fi
 
         mod="${modifier[$i]}"
+        if [ "${mod}" != "-" ]; then
+            case "${mod}" in
+            "lower")
+                value="${value,,}"
+                ;;
+            "upper")
+                value="${value^^}"
+                ;;
+            esac
+        fi
 
-        case "${mod}" in
-        "lower")
-            value="${value,,}"
-            ;;
-        "upper")
-            value="${value^^}"
-            ;;
-        esac
-
-        declare -g "${clean_args[$i]}=${value}"
+        declare -g "${name}=${value}"
         unset value
         ((i++))
     done

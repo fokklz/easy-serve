@@ -85,8 +85,9 @@ DOMAIN="${set_domain}"
 EOF
 
 bash "${SCRIPTS_DIR}/security/gen-ca-cert.sh"
-bash "${SCRIPTS_DIR}/security/gen-host-key.sh"
 bash "${SCRIPTS_DIR}/security/rotate-client-cert.sh"
+
+bash "${SCRIPTS_DIR}/sftp/gen-host-key.sh"
 
 (
     cd "${ROOT}"

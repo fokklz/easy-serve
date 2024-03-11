@@ -1,0 +1,44 @@
+{
+    "description": "Welcome to the EasyService CLI\\nStart by creating a new instance of a template or manage existing ones.",
+    "globalOptions": [
+        {
+            "flag": "-h, --help",
+            "description": "Show help message"
+        },
+        {
+            "flag": "-v, --version",
+            "description": "Show version information"
+        }
+    ],
+    "commands": [
+        {
+            "name": "start",
+            "description": "Start the service",
+            "usage": "[name]",
+            "options": []
+        },
+        {
+            "name": "stop",
+            "usage": "[name]",
+            "description": "Stop the service",
+            "options": []
+        },
+        {
+            "name": "restart",
+            "usage": "[name]",
+            "description": "Restart the service",
+            "options": []
+        },
+        {
+            "name": "remove",
+            "usage": "[name]",
+            "description": "Remove the service",
+            "options": [
+                {
+                    "flag": "-f, --force",
+                    "description": "Force remove the service"
+                }
+            ]
+        }
+    ]
+}

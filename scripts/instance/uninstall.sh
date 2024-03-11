@@ -2,11 +2,19 @@ DIR=$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")
 
 source "${DIR}/../globals.sh"
 
-named_args "TYPE|lower" "NAME|lower"
+named_args "name"
 
-INSTANCE="${INSTANCE_ROOT}/${TYPE}/${NAME}"
+TARGET_TYPE="names"
+if [[ "${name}" =~ $DOMAIN_REGEX ]]; then
+    TARGET_TYPE="domains"
+fi
+
+INSTANCE=$(get_instance "${TARGET_TYPE}" "${name}")
 
 source "${INSTANCE}/.env"
+
+echo "Uninstalling the instance ${INSTANCE_NAME} served at ${INSTANCE_DOMAIN}..."
+echo "${@} value of force is ${FORCE}"
 
 if prompt_confirmation "Are you sure you want to uninstall the instance ${INSTANCE_NAME} served at ${INSTANCE_DOMAIN}?"; then
     bash "${INSTANCE}/stop.sh"
