@@ -48,85 +48,50 @@ if [ -f "${ROOT}/.env" ]; then
     source "${ROOT}/.env"
 fi
 
+CERT_COUNTRY="CH"
+CERT_STATE="Basel"
+CERT_CITY="Basel"
+CERT_ORGANIZATION="${DOMAIN//./-}"
+
+source "${SCRIPTS_DIR}/functions.sh"
+
 # Contains all arguments passed to the script not starting with --
 ARGS=()
 
 for arg in "$@"; do
-    if [[ ! "$arg" =~ ^-- ]]; then
-        ARGS+=("$arg")
-    else
+    if [[ "$arg" =~ ^-- ]]; then
+        # Long option
         IFS='=' read -r flag_name flag_value <<<"${arg:2}"
-        if [ -z "$flag_value" ]; then
+        # Default flag value to true if not specified
+        [ -z "$flag_value" ] && flag_value=true
+    elif [[ "$arg" =~ ^-[^-] ]]; then
+        # Short option
+        short_opt="${arg:1}"
+        long_opt=$(map_short_options "$short_opt")
+        # Assuming the format -o=value for short options mapped to long options
+        if [[ "$long_opt" =~ = ]]; then
+            IFS='=' read -r flag_name flag_value <<<"$long_opt"
+        else
+            flag_name="${long_opt:2}"
             flag_value=true
         fi
-
-        flag_name="${flag_name//-/_}" # replace '-' with '_'
-        flag_name="${flag_name^^}"    # uppercase
-
-        declare -g "$flag_name"="$flag_value"
+    else
+        # Not an option, add to ARGS array
+        ARGS+=("$arg")
+        continue
     fi
+
+    # Replace '-' with '_' and uppercase the flag name
+    flag_name="${flag_name//-/_}"
+    flag_name="${flag_name^^}"
+
+    if [ -z "$flag_name" ]; then
+        continue
+    fi
+
+    # Declare the variable globally
+    declare -g "FLAG_$flag_name=$flag_value"
 done
-
-source "${SCRIPTS_DIR}/functions.sh"
-# Assigns the arguments to the variables with the names provided
-function named_args() {
-    local i=0
-    local min_length=0
-    local usage=""
-    local clean_args=()
-    local modifier=()
-
-    for arg in "${@}"; do
-        # apply modifier if present
-        if [[ "$arg" == *"|"* ]]; then
-            IFS='|' read -r arg modifier <<<"$arg"
-            modifier+=("${modifier,,}")
-        else
-            modifier+=("-")
-        fi
-
-        # when the name is uppercase, it is required
-        if [[ "$arg" == *[[:upper:]]* ]]; then
-            ((min_length++))
-            usage+="<${arg,,}> "
-        else
-            usage+="[${arg,,}] "
-        fi
-
-        clean_args+=("$arg")
-    done
-
-    declare -g "COMMAND_USAGE=${usage}"
-    if [ "${USAGE}" = true ]; then
-        echo "${COMMAND_USAGE}"
-        exit 0
-    fi
-
-    for name in "${clean_args[@]}"; do
-
-        value="${ARGS[$i]}"
-
-        if [ -z "${value}" ]; then
-            break
-        fi
-
-        mod="${modifier[$i]}"
-        if [ "${mod}" != "-" ]; then
-            case "${mod}" in
-            "lower")
-                value="${value,,}"
-                ;;
-            "upper")
-                value="${value^^}"
-                ;;
-            esac
-        fi
-
-        declare -g "${name}=${value}"
-        unset value
-        ((i++))
-    done
-}
 
 ENSURE="$INSTANCE_ROOT $SFTP_KEYS_DIR $CLIENTS_CERT_DIR"
 

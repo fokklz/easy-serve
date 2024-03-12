@@ -1,0 +1,7 @@
+nav:
+  - Create: create.md
+  - Manage: manage.md
+  - Start: start.md
+  - Stop: stop.md
+  - Restart: restart.md
+  - Remove: remove.md

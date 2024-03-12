@@ -45,11 +45,24 @@ select_instance_with_action() {
         awk -F/ '{print $NF}'
 }
 
-select_action() {
+function select_action() {
     local instance=$1
     local instance_name=$(basename "$instance")
 
     actions=($(find "${instance}" -type f -name "*.sh" -exec basename {} \;))
 
     printf '%s\n' "${actions[@]}" | fzf --height 10 --prompt "Select an action for $instance_name: "
+}
+
+function select_client() {
+    local clients=$(find "${CLIENTS_CERT_DIR}" -type d -exec basename {} \; | grep -v "system")
+
+    printf '%s\n' "${clients[@]}" | fzf --height 10 --prompt "Select a client: "
+}
+
+function select_client_action() {
+    local client=$1
+    local actions=("revoke" "renew")
+
+    printf '%s\n' "${actions[@]}" | fzf --height 10 --prompt "Select an action for $client_name: "
 }

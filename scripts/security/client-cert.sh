@@ -6,38 +6,19 @@
 # the certificate is signed by the CA certificate and key
 # the password is automatically generated and printed on creation
 # to authenticate the user will need to use the PFX certificate and the password
+#
+# Flags:
+#  --force: force the creation of the client certificate even if the certificate already exists
+#  --remove-only: only remove the client certificate if it exists
 
 DIR=$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")
 
 source "${DIR}/../globals.sh"
-source "${DIR}/vars.sh"
 
 named_args "CLIENT_NAME|lower"
 
 CERT_CN="${CLIENT_NAME}.client.traefik.${DOMAIN}"
-
-# Ensure the CA certificate and key exist before generating the client certificate
-if [ ! -f "${CA_CERT}" ] || [ ! -f "${CA_KEY}" ]; then
-    bash "${DIR}/gen-ca-cert.sh"
-
-    if [ $? -ne 0 ]; then
-        error "Failed to generate CA certificate and key, cannot generate client certificate"
-    fi
-fi
-
-# Create the directory for all client data
 CLIENT_SUB_DIR="${CLIENTS_CERT_DIR}/${CLIENT_NAME}"
-if [ ! -d "${CLIENT_SUB_DIR}" ]; then
-    mkdir "${CLIENT_SUB_DIR}"
-else
-    # If the client directory already exists, re-create it if the force flag is set
-    if [ "${FORCE}" = true ]; then
-        rm -rf "${CLIENT_SUB_DIR}"
-        mkdir "${CLIENT_SUB_DIR}"
-    else
-        error "Client ${CLIENT_NAME} already exists"
-    fi
-fi
 
 CLIENT_CSR="${CLIENT_SUB_DIR}/${CLIENT_NAME}.traefik.client.csr"
 CLIENT_CERT="${CLIENT_SUB_DIR}/${CLIENT_NAME}.traefik.client.crt"
@@ -45,6 +26,38 @@ CLIENT_KEY="${CLIENT_SUB_DIR}/${CLIENT_NAME}.traefik.client.key"
 
 CLIENT_PASSWORD=$(openssl rand -hex 12)
 CLIENT_PFX_CERT="${CLIENTS_CERT_DIR}/${CLIENT_NAME}.traefik.client.pfx"
+
+# Ensure the CA certificate and key exist before generating the client certificate
+if [ ! -f "${CA_CERT}" ] || [ ! -f "${CA_KEY}" ]; then
+    warning "CA certificate and key not found, generating..."
+    bash "${DIR}/gen-ca-cert.sh"
+
+    if [ $? -ne 0 ]; then
+        error "Failed to generate CA certificate and key, cannot generate client certificate"
+    fi
+fi
+
+# If the client certificate already exists, remove it if the force flag is set (or remove-only)
+if [ -f "${CLIENT_PFX_CERT}" ]; then
+    if [[ $FLAG_FORCE = true ]] || [[ $FLAG_REMOVE_ONLY = true ]]; then
+        (
+            rm -f "${CLIENT_PFX_CERT}"
+
+            if [ -d "${CLIENT_SUB_DIR}" ]; then
+                rm -rf "${CLIENT_SUB_DIR}"
+            fi
+        ) &
+        loading_spinner "Removing client $(mark "${CLIENT_NAME}")..." \
+            "Removed client $(mark "${CLIENT_NAME}")"
+    else
+        error "PFX certificate for client ${CLIENT_NAME} already exists"
+    fi
+fi
+
+# Force exit on remove-only flag
+if [[ $FLAG_REMOVE_ONLY = true ]]; then
+    exit 0
+fi
 
 (
     # Generate the client key and certificate

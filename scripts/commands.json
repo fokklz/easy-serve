@@ -1,4 +1,5 @@
 {
+    "version": "pre-0.0.1",
     "description": "Welcome to the EasyService CLI\\nStart by creating a new instance of a template or manage existing ones.",
     "globalOptions": [
         {
@@ -11,6 +12,34 @@
         }
     ],
     "commands": [
+        {
+            "name": "create",
+            "description": "Create a new service",
+            "usage": "[type] [name]",
+            "options": [
+                {
+                    "flag": "-t, --template",
+                    "description": "The template to use"
+                }
+            ]
+        },
+        {
+            "name": "manage",
+            "description": "Manage an existing service",
+            "usage": "[name]",
+            "options": []
+        },
+        {
+            "name": "create-client",
+            "description": "Create a new client",
+            "usage": "[name]",
+            "options": [
+                {
+                    "flag": "-t, --template",
+                    "description": "The template to use"
+                }
+            ]
+        },
         {
             "name": "start",
             "description": "Start the service",

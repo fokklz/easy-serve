@@ -49,6 +49,92 @@ function print_help() {
     fi
 }
 
+# Function to print the version of the script
+function print_version() {
+    echo "Version: $(read_config '.version')"
+}
+
+# Function to Map shorthand options to their long counterparts
+function map_short_options() {
+    case "$1" in
+    h)
+        echo "--help"
+        ;;
+    v)
+        echo "--version"
+        ;;
+    f)
+        echo "--force"
+        ;;
+    d)
+        echo "--debug"
+        ;;
+    *)
+        echo -e "${COLOR_YELLOW}Unknown option: -$1${COLOR_RESET}" >/dev/tty
+        ;;
+    esac
+}
+
+# Funtion that Assigns the arguments to the variables with the names provided
+function named_args() {
+    local i=0
+    local min_length=0
+    local usage=""
+    local clean_args=()
+    local modifier=()
+
+    for arg in "${@}"; do
+        # apply modifier if present
+        if [[ "$arg" == *"|"* ]]; then
+            IFS='|' read -r arg modifier <<<"$arg"
+            modifier+=("${modifier,,}")
+        else
+            modifier+=("-")
+        fi
+
+        # when the name is uppercase, it is required
+        if [[ "$arg" == *[[:upper:]]* ]]; then
+            ((min_length++))
+            usage+="<${arg,,}> "
+        else
+            usage+="[${arg,,}] "
+        fi
+
+        clean_args+=("$arg")
+    done
+
+    declare -g "COMMAND_USAGE=${usage}"
+    if [ "${FLAG_USAGE}" = true ]; then
+        echo "${COMMAND_USAGE}"
+        exit 0
+    fi
+
+    for name in "${clean_args[@]}"; do
+
+        value="${ARGS[$i]}"
+
+        if [ -z "${value}" ]; then
+            break
+        fi
+
+        mod="${modifier[$i]}"
+        if [ "${mod}" != "-" ]; then
+            case "${mod}" in
+            "lower")
+                value="${value,,}"
+                ;;
+            "upper")
+                value="${value^^}"
+                ;;
+            esac
+        fi
+
+        declare -g "${name}=${value}"
+        unset value
+        ((i++))
+    done
+}
+
 # ----------------------------------------- //
 #  // --- INSTANCE MANAGEMENT FUNCTIONS --- //
 # ----------------------------------------- //
@@ -277,7 +363,7 @@ function ask_input() {
 
 # Function to prompt the user for confirmation will eval to true if the force flag is set
 function prompt_confirmation() {
-    if [ "${FORCE:-false}" = true ]; then
+    if [[ "${FORCE:-false}" = true ]]; then
         return 0
     fi
 
@@ -291,7 +377,7 @@ function prompt_confirmation() {
 
 # Function to print an error message and exit the script
 function error() {
-    if [ "${PLAIN:-false}" = true ]; then
+    if [[ $FLAG_PLAIN = true ]]; then
         echo "${1}"
     else
         echo -e "${COLOR_RED}${1}${COLOR_RESET}"
@@ -304,9 +390,17 @@ function mark() {
     value="${1}"
     color="${2:-${COLOR_CYAN}}"
 
-    if [ "${PLAIN:-false}" = true ]; then
+    if [[ $FLAG_PLAIN = true ]]; then
         echo "${value}"
     else
         echo -e "${color}${value}${COLOR_RESET}"
+    fi
+}
+
+function warning() {
+    if [[ $FLAG_PLAIN = true ]]; then
+        echo "${1}"
+    else
+        echo -e "${COLOR_YELLOW}${1}${COLOR_RESET}"
     fi
 }
