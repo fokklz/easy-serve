@@ -1,5 +1,5 @@
 {
-    "version": "pre-0.0.1",
+    "version": "1.0.0",
     "description": "Welcome to the EasyService CLI\\nStart by creating a new instance of a template or manage existing ones.",
     "globalOptions": [
         {
