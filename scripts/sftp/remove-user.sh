@@ -14,9 +14,15 @@ DIR=$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")
 
 source "${DIR}/../globals.sh"
 
-named_args "USER|lower"
+register_arg "user" "" "${FOLDER_REGEX}"
 
-if [ -f "${SFTP_USERS_FILE}" ] && grep -q "^$USER:" "${SFTP_USERS_FILE}"; then
+source "${SCRIPTS_DIR}/args.sh"
+
+# ----------------------------------------------- \\
+# Start of the script
+# ----------------------------------------------- \\
+
+if [ -f "${SFTP_USERS_FILE}" ] && grep -q "^$ARG_USER:" "${SFTP_USERS_FILE}"; then
     (
         volume_to_remove=$(yq e ".services.${COMPOSE_SFTP_SERVICE}.volumes[]" "${COMPOSE_FILE}" | grep ":/home/${USER}/*" | head -n 2)
 
@@ -28,7 +34,7 @@ if [ -f "${SFTP_USERS_FILE}" ] && grep -q "^$USER:" "${SFTP_USERS_FILE}"; then
         done
 
         # remove the user from the user file
-        sed -i "/^$USER:/d" "${SFTP_USERS_FILE}"
+        sed -i "/^$ARG_USER:/d" "${SFTP_USERS_FILE}"
 
         # remove the user's key
         if [ -f "${SFTP_KEYS_DIR}/${USER}_id_ed25519_key" ]; then
@@ -40,10 +46,10 @@ if [ -f "${SFTP_USERS_FILE}" ] && grep -q "^$USER:" "${SFTP_USERS_FILE}"; then
             restart "${COMPOSE_SFTP_SERVICE}" >/dev/null 2>&1
         fi
     ) &
-    loading_spinner "Removing user $(mark "$USER") from ${COMPOSE_SFTP_SERVICE}..." \
-        "Removed user $(mark "$USER") from ${COMPOSE_SFTP_SERVICE}"
+    loading_spinner "Removing user $(mark "$ARG_USER") from ${COMPOSE_SFTP_SERVICE}..." \
+        "Removed user $(mark "$ARG_USER") from ${COMPOSE_SFTP_SERVICE}"
 else
     if [ "${SOFT}" != true ]; then
-        error "User $USER does not exist"
+        error "User $ARG_USER does not exist"
     fi
 fi

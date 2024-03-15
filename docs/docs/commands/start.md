@@ -6,11 +6,13 @@ Start a instance.
 easy-serve start <name> [options]
 ```
 
+Multiple instances can be started at once separated by a comma.
+
 ## Arguments
 
 Name   | Description                          | Default
--------|--------------------------------------|--------
-`name` | The name of the instance to restart. | -
+-------|--------------------------------------|-----------------------------
+`name` | The name of the instance to restart. | will be prompted using `fzf`
 
 
 ## Options

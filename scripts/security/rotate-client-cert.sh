@@ -8,6 +8,10 @@
 #
 # for example:
 # curl --cert-type P12 --cert $(cat "${SEC_CERT}") https://traefik.fokklz.dev/api/rawdata
+#
+# Arguments: -
+#
+# Flags: -
 
 DIR=$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")
 source "${DIR}/../globals.sh"

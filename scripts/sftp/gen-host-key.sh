@@ -11,9 +11,10 @@
 DIR=$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")
 
 source "${DIR}/../globals.sh"
+source "${SCRIPTS_DIR}/args.sh"
 
 if [ -f "${SFTP_KEYS_DIR}/ssh_host_ed25519_key" ]; then
-    if [ "${FORCE}" != true ]; then
+    if [ "${FLAG_FORCE}" != true ]; then
         if [ "${SOFT}" != true ]; then
             error "Host Key already exists, use --force to overwrite"
         fi

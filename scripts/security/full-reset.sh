@@ -3,10 +3,15 @@
 DIR=$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")
 
 source "${DIR}/../globals.sh"
+source "${SCRIPTS_DIR}/args.sh"
+
+# ----------------------------------------------- \\
+# Start of the script
+# ----------------------------------------------- \\
 
 (
     cd "${ROOT}"
-    docker compose down >/dev/null 2>&1
+    docker compose down
 ) &
 loading_spinner "Stopping services..." "Stopped services"
 

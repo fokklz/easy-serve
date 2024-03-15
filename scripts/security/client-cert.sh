@@ -1,5 +1,5 @@
 #!/bin/bash
-# Path: scripts/security/gen-client-cert.sh
+# Path: scripts/security/client-cert.sh
 # Author: Fokko Vos
 #
 # Generates a client certificate for traefik dashboard authentication
@@ -15,17 +15,23 @@ DIR=$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")
 
 source "${DIR}/../globals.sh"
 
-named_args "CLIENT_NAME|lower"
+register_arg "name" "" "${FOLDER_REGEX}"
 
-CERT_CN="${CLIENT_NAME}.client.traefik.${DOMAIN}"
-CLIENT_SUB_DIR="${CLIENTS_CERT_DIR}/${CLIENT_NAME}"
+source "${SCRIPTS_DIR}/args.sh"
 
-CLIENT_CSR="${CLIENT_SUB_DIR}/${CLIENT_NAME}.traefik.client.csr"
-CLIENT_CERT="${CLIENT_SUB_DIR}/${CLIENT_NAME}.traefik.client.crt"
-CLIENT_KEY="${CLIENT_SUB_DIR}/${CLIENT_NAME}.traefik.client.key"
+CERT_CN="${ARG_NAME}.client.traefik.${DOMAIN}"
+CLIENT_SUB_DIR="${CLIENTS_CERT_DIR}/${ARG_NAME}"
+
+CLIENT_CSR="${CLIENT_SUB_DIR}/${ARG_NAME}.traefik.client.csr"
+CLIENT_CERT="${CLIENT_SUB_DIR}/${ARG_NAME}.traefik.client.crt"
+CLIENT_KEY="${CLIENT_SUB_DIR}/${ARG_NAME}.traefik.client.key"
 
 CLIENT_PASSWORD=$(openssl rand -hex 12)
-CLIENT_PFX_CERT="${CLIENTS_CERT_DIR}/${CLIENT_NAME}.traefik.client.pfx"
+CLIENT_PFX_CERT="${CLIENTS_CERT_DIR}/${ARG_NAME}.traefik.client.pfx"
+
+# ----------------------------------------------- \\
+# Start of the script
+# ----------------------------------------------- \\
 
 # Ensure the CA certificate and key exist before generating the client certificate
 if [ ! -f "${CA_CERT}" ] || [ ! -f "${CA_KEY}" ]; then
@@ -47,10 +53,10 @@ if [ -f "${CLIENT_PFX_CERT}" ]; then
                 rm -rf "${CLIENT_SUB_DIR}"
             fi
         ) &
-        loading_spinner "Removing client $(mark "${CLIENT_NAME}")..." \
-            "Removed client $(mark "${CLIENT_NAME}")"
+        loading_spinner "Removing client $(mark "${ARG_NAME}")..." \
+            "Removed client $(mark "${ARG_NAME}")"
     else
-        error "PFX certificate for client ${CLIENT_NAME} already exists"
+        error "PFX certificate for client ${ARG_NAME} already exists"
     fi
 fi
 
@@ -68,5 +74,5 @@ fi
     # Generate PFX certificate using the generated password
     openssl pkcs12 -export -out "${CLIENT_PFX_CERT}" -inkey "${CLIENT_KEY}" -in "${CLIENT_CERT}" -passout "pass:${CLIENT_PASSWORD}" >/dev/null 2>&1
 ) &
-loading_spinner "Generating Cert for Client $(mark "${CLIENT_NAME}")..." \
-    "Generated Cert for Client $(mark "${CLIENT_NAME}")\nPFX Certificate: $(mark "${CLIENT_PFX_CERT}")\nPassword: $(mark "${CLIENT_PASSWORD}")"
+loading_spinner "Generating Cert for Client $(mark "${ARG_NAME}")..." \
+    "Generated Cert for Client $(mark "${ARG_NAME}")\nPFX Certificate: $(mark "${CLIENT_PFX_CERT}")\nPassword: $(mark "${CLIENT_PASSWORD}")"

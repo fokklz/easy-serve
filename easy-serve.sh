@@ -4,14 +4,18 @@ DIR=$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")
 
 source "${DIR}/scripts/globals.sh"
 
-named_args "command"
+if [[ -z $1 ]]; then
+    command="help"
+else
+    command=$1
+fi
 
 if [[ $FLAG_VERSION = true ]]; then
     print_version
     exit 0
 fi
 
-if [[ -z $command ]] || [[ $FLAG_HELP = true ]]; then
+if [[ $FLAG_HELP = true ]]; then
     print_help "$command"
     exit 0
 fi
@@ -41,9 +45,6 @@ create-client)
     ;;
 panic)
     bash "${SCRIPTS_DIR}/security/panic.sh" ${@:2}
-    ;;
-reset)
-    bash "${SCRIPTS_DIR}/core/full-reset.sh" ${@:2}
     ;;
 *)
     # ensure the command esists

@@ -11,6 +11,11 @@
 DIR=$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")
 
 source "${DIR}/../globals.sh"
+source "${SCRIPTS_DIR}/args.sh"
+
+# ----------------------------------------------- \\
+# Start of the script
+# ----------------------------------------------- \\
 
 if [ -f "${CA_CERT}" ] || [ -f "${CA_KEY}" ]; then
     if [[ $FLAG_FORCE = true ]]; then

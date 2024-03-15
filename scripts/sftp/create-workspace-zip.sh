@@ -12,7 +12,14 @@ TEMP_DIR=$(mktemp -d)
 
 source "${DIR}/../globals.sh"
 
-named_args "USER|lower" "OUT"
+register_arg "user" "" "${FOLDER_REGEX}"
+register_arg "out"
+
+source "${SCRIPTS_DIR}/args.sh"
+
+# ----------------------------------------------- \\
+# Start of the script
+# ----------------------------------------------- \\
 
 # ensure workspace exists
 WORKSPACE="${TEMP_DIR}/workspace"
@@ -27,7 +34,7 @@ fi
     fi
 
     # include the user's private key in the workspace
-    cp "${SFTP_KEYS_DIR}/${USER}_id_ed25519_key" "./.vscode/${USER}_id_ed25519_key"
+    cp "${SFTP_KEYS_DIR}/${ARG_USER}_id_ed25519_key" "./.vscode/${ARG_USER}_id_ed25519_key"
 
     # -- .vscode/extensions.json --
 
@@ -41,12 +48,12 @@ EOF
 
     cat >".vscode/sftp.json" <<EOF
 {
-  "name": "${USER} - ${DOMAIN}",
+  "name": "${ARG_USER} - ${DOMAIN}",
   "host": "sftp.${DOMAIN}",
   "protocol": "sftp",
   "port": ${SFTP_PORT:-22},
-  "username": "${USER}",
-  "privateKeyPath": ".vscode/${USER}_id_ed25519_key",
+  "username": "${ARG_USER}",
+  "privateKeyPath": ".vscode/${ARG_USER}_id_ed25519_key",
   "remotePath": "webroot",
   "uploadOnSave": true,
   "downloadOnOpen": true,
@@ -58,21 +65,21 @@ EOF
   "ignore": [
       ".vscode/sftp.json",
       ".vscode/extensions.json",
-      ".vscode/${USER}_id_ed25519_key"
+      ".vscode/${ARG_USER}_id_ed25519_key"
   ]
 }
 EOF
 
-    if [ -f "${OUT}/workspace.zip" ]; then
-        rm -f "${OUT}/workspace.zip"
+    if [ -f "${ARG_OUT}/workspace.zip" ]; then
+        rm -f "${ARG_OUT}/workspace.zip"
     fi
 
     # ZIP the created workspace and move it to the output directory
     zip -r -q "workspace.zip" .
-    mv "workspace.zip" "${OUT}/workspace.zip"
+    mv "workspace.zip" "${ARG_OUT}/workspace.zip"
 ) &
-loading_spinner "Creating workspace for $(mark "$USER")..." \
-    "Created workspace for $(mark "$USER")"
+loading_spinner "Creating workspace for $(mark "$ARG_USER")..." \
+    "Created workspace for $(mark "$ARG_USER")"
 
 # cleanup
 rm -rf "${TEMP_DIR}"

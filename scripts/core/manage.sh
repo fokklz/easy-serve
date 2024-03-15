@@ -5,82 +5,93 @@
 # This script is meant to manage instances
 # the necessary information is requested from the user interactively using fuzzy search
 # for quick actions also supports direct action execution without interactive selection
+#
+# FLAGS:
+# --client: manage traefik client certificates instead of instances
 
 DIR=$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")
 
 source "${DIR}/../globals.sh"
-source "${DIR}/../fuzzy.sh"
+source "${SCRIPTS_DIR}/fuzzy.sh"
 
-named_args "instance" "action"
+NO_PROMPT=true
+
+register_arg "name" "" "${FOLDER_REGEX}"
+register_arg "action" "" "${FOLDER_REGEX}"
+
+source "${SCRIPTS_DIR}/args.sh"
+
+# ----------------------------------------------- \\
+# Start of the script
+# ----------------------------------------------- \\
 
 if [[ $FLAG_CLIENT = true ]]; then
-    if [ -z "${instance}" ]; then
-        read -r instance <<<$(select_client)
+    if [[ -z "${ARG_NAME}" ]]; then
+        read -r ARG_NAME <<<$(select_client)
     fi
 
-    if [ -z "${instance}" ]; then
+    if [[ -z "${ARG_NAME}" ]]; then
         error "No client selected"
     fi
 
-    if [ -z "${action}" ]; then
-        read -r action <<<$(select_client_action "${instance}")
+    if [[ -z "${ARG_ACTION}" ]]; then
+        read -r ARG_ACTION <<<$(select_client_action "${ARG_NAME}")
     fi
 
-    if [ -z "${action}" ]; then
+    if [[ -z "${ARG_ACTION}" ]]; then
         error "No action selected"
     fi
 
-    case $action in
+    case $ARG_ACTION in
     "revoke")
-        bash "${SCRIPTS_DIR}/security/client-cert.sh" "${instance}" --remove-only
+        bash "${SCRIPTS_DIR}/security/client-cert.sh" "${ARG_NAME}" --remove-only
         ;;
     "renew")
-        bash "${SCRIPTS_DIR}/security/client-cert.sh" "${instance}" --force
+        bash "${SCRIPTS_DIR}/security/client-cert.sh" "${ARG_NAME}" --force
         ;;
     esac
 
 else
-    if [ -z "${instance}" ]; then
-        read -r instance <<<$(select_instance)
+    if [[ -z "${ARG_NAME}" ]]; then
+        read -r ARG_NAME <<<$(select_instance)
     fi
 
-    if [ -z "${instance}" ]; then
+    if [[ -z "${ARG_NAME}" ]]; then
         error "No instance selected"
     fi
 
     # determine the target type
     TARGET_TYPE="names"
-    if [[ "${instance}" =~ $DOMAIN_REGEX ]]; then
+    if [[ "${ARG_NAME}" =~ $DOMAIN_REGEX ]]; then
         TARGET_TYPE="domains"
     fi
 
-    INSTANCE=$(get_instance "$TARGET_TYPE" "$instance")
+    INSTANCE=$(get_instance "$TARGET_TYPE" "$ARG_NAME")
 
-    # failsafe
+    # directory failsafe
     if [ ! -d "${INSTANCE}" ]; then
-        error "The instance ${INSTANCE} does not exist"
+        error "The instance ${ARG_NAME} cannot be found"
     fi
 
     # get user selection if no action is provided
-    if [ -z "${action}" ]; then
-        read -r action <<<$(select_action "${INSTANCE}")
+    if [ -z "${ARG_ACTION}" ]; then
+        read -r ARG_ACTION <<<$(select_action "${INSTANCE}")
     fi
 
-    if [ -z "${action}" ]; then
+    if [ -z "${ARG_ACTION}" ]; then
         error "No action selected for the instance $(basename "${INSTANCE}")"
     fi
 
     # add .sh if not present
-    if [[ ! "${action}" == *.sh ]]; then
-        action="${action}.sh"
+    if [[ ! "${ARG_ACTION}" == *.sh ]]; then
+        ARG_ACTION="${ARG_ACTION}.sh"
     fi
 
-    if [ ! -f "${INSTANCE}/${action}" ]; then
-        echo -e "${COLOR_RED}The action $(mark "${action%.sh}")${COLOR_RED} does not exist for the instance $(mark "$(basename "${INSTANCE}")")"
-        echo -e "Available actions: $(get_available_actions "${INSTANCE}")"
-        exit 1
+    # action failsafe
+    if [ ! -f "${INSTANCE}/${ARG_ACTION}" ]; then
+        echo -e "${COLOR_RED}The action $(mark "${ARG_ACTION%.sh}")${COLOR_RED} does not exist for the instance $(mark "$(basename "${INSTANCE}")")"
+        error "Available actions: $(get_available_actions "${INSTANCE}")"
     fi
 
-    bash "${INSTANCE}/${action}"
-
+    bash "${INSTANCE}/${ARG_ACTION}"
 fi

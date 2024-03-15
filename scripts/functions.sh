@@ -57,6 +57,9 @@ function print_version() {
 # Function to Map shorthand options to their long counterparts
 function map_short_options() {
     case "$1" in
+    c)
+        echo "--client"
+        ;;
     h)
         echo "--help"
         ;;
@@ -73,66 +76,6 @@ function map_short_options() {
         echo -e "${COLOR_YELLOW}Unknown option: -$1${COLOR_RESET}" >/dev/tty
         ;;
     esac
-}
-
-# Funtion that Assigns the arguments to the variables with the names provided
-function named_args() {
-    local i=0
-    local min_length=0
-    local usage=""
-    local clean_args=()
-    local modifier=()
-
-    for arg in "${@}"; do
-        # apply modifier if present
-        if [[ "$arg" == *"|"* ]]; then
-            IFS='|' read -r arg modifier <<<"$arg"
-            modifier+=("${modifier,,}")
-        else
-            modifier+=("-")
-        fi
-
-        # when the name is uppercase, it is required
-        if [[ "$arg" == *[[:upper:]]* ]]; then
-            ((min_length++))
-            usage+="<${arg,,}> "
-        else
-            usage+="[${arg,,}] "
-        fi
-
-        clean_args+=("$arg")
-    done
-
-    declare -g "COMMAND_USAGE=${usage}"
-    if [ "${FLAG_USAGE}" = true ]; then
-        echo "${COMMAND_USAGE}"
-        exit 0
-    fi
-
-    for name in "${clean_args[@]}"; do
-
-        value="${ARGS[$i]}"
-
-        if [ -z "${value}" ]; then
-            break
-        fi
-
-        mod="${modifier[$i]}"
-        if [ "${mod}" != "-" ]; then
-            case "${mod}" in
-            "lower")
-                value="${value,,}"
-                ;;
-            "upper")
-                value="${value^^}"
-                ;;
-            esac
-        fi
-
-        declare -g "${name}=${value}"
-        unset value
-        ((i++))
-    done
 }
 
 # ----------------------------------------- //
@@ -161,76 +104,26 @@ function get_available_actions {
     echo -e "${options_str%, }"
 }
 
-# Function to check if a type is valid (exists in the templates directory)
-function is_valid_type() {
-    local type=$1
+# Function to wrap the validation of the positional arguments, it tries to call a function with the same name as the argument prefixed with `is_valid_...`
+function valid_fn_wrapper() {
+    local fn_name="$1"
+    local input="$2"
+    local regex="$3"
 
-    # If the type is empty, return early
-    if [[ -z "${type}" ]]; then
-        echo 1
-        return
+    if ! [[ -z "$regex" ]]; then
+        if ! [[ "$input" =~ $regex ]]; then
+            echo "Invalid format"
+        fi
     fi
 
-    # If the directory exists in the templates directory we assume it is a valid type
-    if [ -d "${TEMPLATE_ROOT}/${type}" ]; then
-        echo 0
+    if declare -f "$fn_name" >/dev/null; then
+        echo $(eval "$fn_name \"$input\"")
     else
-        echo 1
-    fi
-}
-
-# Function to check if a name is valid and not in use (1 wrong format, 2 already in use)
-function is_valid_name() {
-    local name=$1
-
-    # If the name is empty, return early
-    if [[ -z "${name}" ]]; then
-        echo 1
-        return
-    fi
-
-    if [[ $name =~ $NAME_REGEX ]]; then
-        # Use jq to check if the name is already contained in the names object in the index file
-        if jq -e --arg name "$name" '.names.[$name] | select(. != null)' "$INDEX_FILE" &>/dev/null; then
-            echo 2
+        if [[ -z "$input" ]]; then
+            echo "Invalid input"
         else
             echo 0
         fi
-    else
-        echo 1
-    fi
-}
-
-# Function to check if a domain is valid and not in use (1 wrong format, 2 already in use)
-function is_valid_domain() {
-    local domain=$1
-
-    # If the domain is empty, return early
-    if [[ -z "${domain}" ]]; then
-        echo 1
-        return
-    fi
-
-    if [[ $domain =~ $DOMAIN_REGEX ]]; then
-        # Use jq to check if the domain is already contained in the domains object in the index file
-        if jq -e --arg domain "$domain" '.domains.[$domain] | select(. != null)' "$INDEX_FILE" &>/dev/null; then
-            echo 2
-        else
-            DOMAINS=()
-            if ping -c 4 "traefik.${DOMAIN}" &>/dev/null; then
-                DATA=$(curl -sS --cert-type P12 --cert $(cat ${SEC_CERT}) "https://traefik.${DOMAIN}/api/rawdata")
-                DOMAINS=$(echo "${DATA}" | jq -r '.routers | .[] | select(.rule | startswith("Host")) | .rule' | sed -E 's/Host\(`(.*)`\)/\1/')
-            fi
-
-            if [[ " ${DOMAINS[@]} " =~ " ${domain} " ]]; then
-                echo 2
-                return
-            fi
-
-            echo 0
-        fi
-    else
-        echo 1
     fi
 }
 
@@ -342,10 +235,23 @@ function ask_input() {
     local user_input=""
 
     while true; do
+
+        # If there is a default value and it starts with a backslash to exscape a variable
+        if ! [[ -z "$default_value" ]]; then
+            if [[ "$default_value" =~ ^\$.+ ]]; then
+                default_value="${default_value//\\/}"
+                default_value="$(eval echo "$default_value")"
+            fi
+        fi
+
         echo -n "${prompt_message}"
-        [[ -n "$default_value" && -z "$user_input" ]] && echo -n -e " [${COLOR_CYAN}${default_value}${COLOR_RESET}]"
-        echo -n ": "
-        read user_input
+        if ! [[ -z "$default_value" ]]; then
+            echo -n -e " [${COLOR_CYAN}${default_value}${COLOR_RESET}]:"
+        else
+            echo -n ":"
+        fi
+        echo " "
+        read -e user_input
 
         # Use default if no input is given and it's the first iteration
         [[ -z "$user_input" && -n "$default_value" ]] && user_input="$default_value"
@@ -355,7 +261,7 @@ function ask_input() {
             declare -g "$variable_name=$user_input"
             break
         else
-            echo "Invalid input, please try again." >&2
+            echo "Invalid input for ${variable_name}, please try again." >&2
             user_input="" # Reset user_input to show default value prompt again if needed
         fi
     done

@@ -7,6 +7,23 @@
 SCRIPTS_DIR=$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")
 source "${SCRIPTS_DIR}/colors.sh"
 
+ARG_NAMES=()
+declare -A ARG_SPECS
+
+# Helper function to register arguments for a script to auto-prompt the user for missing arguments
+# the script will try to use a named validation function using `is_valid_${name}` to validate the input
+# if the validation function does not exist, the regex will be used to validate the input
+# if the regex & no function is not provided, the input will not be validated
+# a default value will be used if the user does not provide a value and turns the variable to be "required"
+function register_arg() {
+    local name="$1"
+
+    ARG_NAMES+=("$name")
+
+    ARG_SPECS["$name, default"]=$2
+    ARG_SPECS["$name, regex"]=$3
+}
+
 # Root directories
 ROOT=$(dirname "${SCRIPTS_DIR}")
 TEMPLATE_ROOT="${ROOT}/templates"
@@ -39,10 +56,10 @@ INDEX_FILE="${INSTANCE_ROOT}/index.json"
 # The top-level domain (TLD) must consist of two or more alphabetical characters.
 DOMAIN_REGEX="^(([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]*[a-zA-Z0-9])\.)*([A-Za-z0-9]|[A-Za-z0-9][A-Za-z0-9\-]*[A-Za-z0-9])\.[A-Za-z]{2,}$"
 
-# NAMES
-# The pattern matches names that consist of alphanumeric characters, underscores, and hyphens.
-# The name cannot be empty.
-NAME_REGEX="^[A-Za-z0-9_-]+$"
+# FOLDERS
+# The pattern matches folder names that consist of alphanumeric characters, underscores, and hyphens.
+# The folder name cannot be empty.
+FOLDER_REGEX="^[A-Za-z0-9_-]+$"
 
 if [ -f "${ROOT}/.env" ]; then
     source "${ROOT}/.env"
@@ -53,45 +70,8 @@ CERT_STATE="Basel"
 CERT_CITY="Basel"
 CERT_ORGANIZATION="${DOMAIN//./-}"
 
+source "${SCRIPTS_DIR}/validators.sh"
 source "${SCRIPTS_DIR}/functions.sh"
-
-# Contains all arguments passed to the script not starting with --
-ARGS=()
-
-for arg in "$@"; do
-    if [[ "$arg" =~ ^-- ]]; then
-        # Long option
-        IFS='=' read -r flag_name flag_value <<<"${arg:2}"
-        # Default flag value to true if not specified
-        [ -z "$flag_value" ] && flag_value=true
-    elif [[ "$arg" =~ ^-[^-] ]]; then
-        # Short option
-        short_opt="${arg:1}"
-        long_opt=$(map_short_options "$short_opt")
-        # Assuming the format -o=value for short options mapped to long options
-        if [[ "$long_opt" =~ = ]]; then
-            IFS='=' read -r flag_name flag_value <<<"$long_opt"
-        else
-            flag_name="${long_opt:2}"
-            flag_value=true
-        fi
-    else
-        # Not an option, add to ARGS array
-        ARGS+=("$arg")
-        continue
-    fi
-
-    # Replace '-' with '_' and uppercase the flag name
-    flag_name="${flag_name//-/_}"
-    flag_name="${flag_name^^}"
-
-    if [ -z "$flag_name" ]; then
-        continue
-    fi
-
-    # Declare the variable globally
-    declare -g "FLAG_$flag_name=$flag_value"
-done
 
 ENSURE="$INSTANCE_ROOT $SFTP_KEYS_DIR $CLIENTS_CERT_DIR"
 

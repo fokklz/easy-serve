@@ -12,60 +12,46 @@
 DIR=$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")
 
 source "${DIR}/../globals.sh"
-source "${DIR}/../fuzzy.sh"
+source "${SCRIPTS_DIR}/fuzzy.sh"
+
+NO_PROMPT_TEMPLATE=true
+
+register_arg "template" "" "${FOLDER_REGEX}"
+register_arg "domain" "" "${FOLDER_REGEX}|${DOMAIN_REGEX}"
+register_arg "name" "\${ARG_DOMAIN%%.*}" "${FOLDER_REGEX}"
 
 if [ ! -f "${INDEX_FILE}" ]; then
     echo '{"names": {}, "domains": {}}' >"$INDEX_FILE"
 fi
 
-named_args "template|lower" "domain|lower" "instance_name|lower"
+source "${SCRIPTS_DIR}/args.sh"
 
-VALID_TYPE=$(is_valid_type "${template}")
+# ----------------------------------------------- \\
+# Start of the script
+# ----------------------------------------------- \\
+
+VALID_TYPE=$(is_valid_template "${ARG_TEMPLATE}")
 while [ "$VALID_TYPE" != 0 ]; do
     # TODO: use fzf instead to select a template template
-    read -r template <<<$(select_template)
-    VALID_TYPE=$(is_valid_type "${template}")
+    read -r ARG_TEMPLATE <<<$(select_template)
+    VALID_TYPE=$(is_valid_template "${ARG_TEMPLATE}")
 done
 
-# if the provided domain is something and does not contain a dot, append the global domain
-if [[ ! -z "${domain}" ]] && [[ "${domain}" != *.* ]]; then
-    domain="${domain}.${DOMAIN}"
+# if the provided ARG_DOMAIN is something and does not contain a dot, append the global ARG_DOMAIN
+if [[ ! -z "${ARG_DOMAIN}" ]] && [[ "${ARG_DOMAIN}" != *.* ]]; then
+    ARG_DOMAIN="${ARG_DOMAIN}.${DOMAIN}"
 fi
 
-VALID_DOMAIN=$(is_valid_domain "${domain}")
-while [ "$VALID_DOMAIN" != 0 ]; do
-    REASON="is not a valid domain"
-    if [ "$VALID_DOMAIN" = 2 ]; then
-        REASON="is already in use"
-    fi
-
-    ask_input "Domain ${domain:-???} ${REASON}. Please provide a different domain" "${DOMAIN_REGEX}" "" domain
-    VALID_DOMAIN=$(is_valid_domain "${domain}")
-done
-
-NAME="${domain%%.*}"
-
-if [ -n "$instance_name" ]; then
-    NAME="${instance_name}"
+if [ -z "${ARG_NAME}" ]; then
+    ARG_NAME="${ARG_DOMAIN%%.*}"
 fi
 
-VALID_NAME=$(is_valid_name "${NAME}")
-while [ "$VALID_NAME" != 0 ]; do
-    REASON="is not a valid name"
-    if [ "$VALID_NAME" = 2 ]; then
-        REASON="is already in use"
-    fi
-
-    ask_input "Name ${NAME:-???} ${REASON}. Please provide a different name" "${NAME_REGEX}" "" NAME
-    VALID_NAME=$(is_valid_name "${NAME}")
-done
-
-INSTANCE="${INSTANCE_ROOT}/${template}/${NAME}"
-TEMPLATE="${TEMPLATE_ROOT}/${template}"
+INSTANCE="${INSTANCE_ROOT}/${ARG_TEMPLATE}/${ARG_NAME}"
+TEMPLATE="${TEMPLATE_ROOT}/${ARG_TEMPLATE}"
 
 # finally re-esure the instance does not exist by full path
 if [ -d "${INSTANCE}" ]; then
-    error "Instance ${NAME} already exists"
+    error "Instance ${ARG_NAME} already exists"
 fi
 
 mkdir -p "$INSTANCE"
@@ -76,9 +62,9 @@ mkdir -p "$INSTANCE"
         fi
     done
 ) &
-loading_spinner "Initializing ${template}..." "Template files Coppied to ${template}/${NAME}"
+loading_spinner "Initializing ${TEMPLATE}..." "Template files Coppied to ${TEMPLATE}/${ARG_NAME}"
 
-bash "${TEMPLATE}/install.sh" "${domain}" "${NAME}" "${INSTANCE}" >"${INSTANCE}/.env"
+bash "${TEMPLATE}/install.sh" "${ARG_DOMAIN}" "${ARG_NAME}" "${INSTANCE}" >"${INSTANCE}/.env"
 
 (
     cd "${INSTANCE}" || exit
@@ -90,14 +76,14 @@ bash "${TEMPLATE}/install.sh" "${domain}" "${NAME}" "${INSTANCE}" >"${INSTANCE}/
 # Path: ${INSTANCE}/start.sh
 # Author: auto-generated
 #
-# This script is used to start the ${NAME} instance
+# This script is used to start the ${ARG_NAME} instance
 
 source "${SCRIPTS_DIR}/globals.sh"
 
 (
     cd ${INSTANCE}
     docker compose up -d
-) & loading_spinner "Starting \$(mark "$NAME")..." "Started \$(mark "$NAME") successfully."
+) & loading_spinner "Starting \$(mark "$ARG_NAME")..." "Started \$(mark "$ARG_NAME") successfully."
 EOF
     chmod +x start.sh
 
@@ -108,14 +94,14 @@ EOF
 # Path: ${INSTANCE}/stop.sh
 # Author: auto-generated
 #
-# This script is used to stop the ${NAME} instance
+# This script is used to stop the ${ARG_NAME} instance
 
 source "${SCRIPTS_DIR}/globals.sh"
 
 (
     cd ${INSTANCE}
     docker compose down
-) & loading_spinner "Stopping \$(mark "$NAME")..." "Stopped \$(mark "$NAME") successfully."
+) & loading_spinner "Stopping \$(mark "$ARG_NAME")..." "Stopped \$(mark "$ARG_NAME") successfully."
 EOF
     chmod +x stop.sh
 
@@ -126,7 +112,7 @@ EOF
 # Path: ${INSTANCE}/restart.sh
 # Author: auto-generated
 #
-# This script is used to restart the ${NAME} instance
+# This script is used to restart the ${ARG_NAME} instance
 
 bash "${INSTANCE}/stop.sh"
 bash "${INSTANCE}/start.sh"
@@ -134,30 +120,34 @@ EOF
 
     chmod +x restart.sh
 
-    # -- uninstall.sh --
+    # -- *.sh from instance --
 
-    cat >"uninstall.sh" <<EOF
+    for item in "${SCRIPTS_DIR}/instance/"*; do
+        name=$(basename "$item")
+
+        cat >"$name" <<EOF
 #!/bin/bash
-# Path: ${INSTANCE}/uninstall.sh
+# Path: ${INSTANCE}/${name}
 # Author: auto-generated
 #
-# This script is used to uninstall the ${NAME} instance
+# This script is used to ${name%.*} the ${ARG_NAME} instance
 
-bash "${SCRIPTS_DIR}/instance/uninstall.sh" "${TYPE}" "${NAME}"
+bash "${SCRIPTS_DIR}/instance/${name}" "${ARG_NAME}"
 EOF
 
-    chmod +x uninstall.sh
+        chmod +x "$name"
+    done
 
 ) &
-loading_spinner "Creating instance scripts for $(mark "${NAME}")..." "Created instance scripts for $(mark "${NAME}")"
+loading_spinner "Creating instance scripts for $(mark "${ARG_NAME}")..." "Created instance scripts for $(mark "${ARG_NAME}")"
 
-# store domain and name in the index file
-jq --arg name "$NAME" --arg instance "$INSTANCE" --arg domain "$domain" '.names += {($name): $instance} | .domains += {($domain): $instance}' "$INDEX_FILE" >"$INDEX_FILE.tmp" && mv "$INDEX_FILE.tmp" "$INDEX_FILE"
+# store ARG_DOMAIN and name in the index file
+jq --arg name "$ARG_NAME" --arg instance "$INSTANCE" --arg ARG_DOMAIN "$ARG_DOMAIN" '.names += {($name): $instance} | .domains += {($ARG_DOMAIN): $instance}' "$INDEX_FILE" >"$INDEX_FILE.tmp" && mv "$INDEX_FILE.tmp" "$INDEX_FILE"
 
 if [ "$NO_SFTP" != true ]; then
-    bash "${DIR}/../sftp/add-user.sh" "${NAME}" "${INSTANCE}/webroot"
+    bash "${DIR}/../sftp/add-user.sh" "${ARG_NAME}" "${INSTANCE}/webroot"
 fi
 
 bash "${INSTANCE}/start.sh"
 
-echo -e "Serving $(mark "${NAME}") at $(mark "https://${domain}")"
+echo -e "Serving $(mark "${ARG_NAME}") at $(mark "https://${ARG_DOMAIN}")"

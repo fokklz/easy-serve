@@ -32,6 +32,8 @@ select_instance_with_action() {
 
     local instances=$(find "$INSTANCE_ROOT" -mindepth 2 -maxdepth 2 -type d -exec test -e "{}/${action}" \; -print)
 
+    echo "$INSTANCE_ROOT" >/dev/tty
+
     printf '%s\n' "${instances}" |
         fzf --prompt "Select an instance: " \
             --preview 'type="$(basename $(dirname {}))"; echo "Type: $type"; 

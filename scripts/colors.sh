@@ -26,31 +26,3 @@ COLOR_BLUE_GREY="\033[38;2;96;125;139m"
 COLOR_BOLD="\033[1m"
 COLOR_UNDERLINE="\033[4m"
 COLOR_RESET="\033[0m"
-
-# Color
-c() {
-    local color=$1
-    local message=$2
-    echo -e "${color}${message}${COLOR_RESET}"
-}
-
-# Color and Bold
-cb() {
-    local color=$1
-    local message=$2
-    echo -e "${COLOR_BOLD}${color}${message}${COLOR_RESET}"
-}
-
-# Color and Underline
-cu() {
-    local color=$1
-    local message=$2
-    echo -e "${COLOR_UNDERLINE}${color}${message}${COLOR_RESET}"
-}
-
-# Color, Bold and Underline
-cbu() {
-    local color=$1
-    local message=$2
-    echo -e "${COLOR_BOLD}${COLOR_UNDERLINE}${color}${message}${COLOR_RESET}"
-}

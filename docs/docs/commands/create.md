@@ -12,7 +12,7 @@ Additional arguments specific to the template will be prompted for.
 
 Name       | Description               | Default
 -----------|---------------------------|-----------------------------------------------------------
-`template` | The template to use.      | -
+`template` | The template to use.      | will be prompted using `fzf`
 `domain`   | The domain to use.        | -
 `name`     | The name of the instance. | inferred from `domain` taking the first part of the domain
 

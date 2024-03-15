@@ -13,21 +13,38 @@ DIR=$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")
 source "${DIR}/../globals.sh"
 source "${DIR}/../fuzzy.sh"
 
-named_args "action" "instance"
+NO_PROMPT_NAME=true
+
+register_arg "action" "" "${FOLDER_REGEX}"
+register_arg "name" "" "${FOLDER_REGEX}"
+
+EXPANSION=${@:3}
+
+source "${SCRIPTS_DIR}/args.sh"
+
+# ----------------------------------------------- \\
+# Start of the script
+# ----------------------------------------------- \\
 
 # add .sh if not present
-if [[ ! "${action}" == *.sh ]]; then
-    action="${action}.sh"
+if [[ ! "${ARG_ACTION}" == *.sh ]]; then
+    ARG_ACTION="${ARG_ACTION}.sh"
 fi
 
-if [ -z "${instance}" ]; then
-    readarray -t instances < <(select_instance_with_action "${action}")
+if [ -z "${ARG_NAME}" ]; then
+    # Select an instance
+    readarray -t instances < <(select_instance_with_action "${ARG_ACTION}")
+elif [[ "${ARG_NAME}" == *","* ]]; then
+    # Support for comma separated values
+    IFS=',' read -ra instances <<<"$ARG_NAME"
 else
-    instances=($instance) # Make sure instances is always an array
+    # Single instance
+    instances=($ARG_NAME) # Make sure instances is always an array
 fi
 
 for name in "${instances[@]}"; do
     if [ -z "${name}" ]; then
+        # Skip empty values
         continue
     fi
 
@@ -37,20 +54,21 @@ for name in "${instances[@]}"; do
         TARGET_TYPE="domains"
     fi
 
+    # Get the instance path by type and name
     INSTANCE=$(get_instance "$TARGET_TYPE" "$name")
 
     # Failsafe
     if [ ! -d "${INSTANCE}" ]; then
-        error "The instance ${INSTANCE} does not exist"
+        warning "The instance ${INSTANCE} does not exist"
         continue
     fi
 
     # Pretty print the possible actions if invalid action is provided
-    if [ ! -f "${INSTANCE}/${action}" ]; then
-        echo -e "${COLOR_RED}The action $(mark "${action%.sh}")${COLOR_RED} does not exist for the instance $(mark "$(basename "${INSTANCE}")")"
-        echo -e "Available actions: $(get_available_actions "${INSTANCE}")"
+    if [ ! -f "${INSTANCE}/${ARG_ACTION}" ]; then
+        warning "The action $(mark "${ARG_ACTION%.sh}")${COLOR_YELLOW} does not exist for the instance $(mark "$(basename "${INSTANCE}")")"
+        warning "Available actions: $(get_available_actions "${INSTANCE}")"
         continue
     fi
 
-    bash "${INSTANCE}/${action}" $@
+    bash "${INSTANCE}/${ARG_ACTION}" $EXPANSION
 done

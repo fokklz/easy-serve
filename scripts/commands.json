@@ -15,48 +15,84 @@
         {
             "name": "create",
             "description": "Create a new service",
-            "usage": "[type] [name]",
+            "usage": "[<type>] <domain> [name]",
             "options": [
                 {
-                    "flag": "-t, --template",
-                    "description": "The template to use"
+                    "flag": "-f, --force",
+                    "description": "Overwrite existing instance"
+                },
+                {
+                    "flag": "-h, --help",
+                    "description": "Show help message"
+                }
+            ]
+        },
+        {
+            "name": "create-client",
+            "description": "Create a new client",
+            "usage": "<name>",
+            "options": [
+                {
+                    "flag": "--remove-only",
+                    "description": "Only remove the client"
+                },
+                {
+                    "flag": "-f, --force",
+                    "description": "Overwrite existing client"
+                },
+                {
+                    "flag": "-h, --help",
+                    "description": "Show help message"
                 }
             ]
         },
         {
             "name": "manage",
-            "description": "Manage an existing service",
-            "usage": "[name]",
-            "options": []
-        },
-        {
-            "name": "create-client",
-            "description": "Create a new client",
+            "description": "Manage an existing instance",
             "usage": "[name]",
             "options": [
                 {
-                    "flag": "-t, --template",
-                    "description": "The template to use"
+                    "flag": "-c, --client",
+                    "description": "Manage clients instead of instances"
+                },
+                {
+                    "flag": "-h, --help",
+                    "description": "Show help message"
                 }
             ]
         },
         {
             "name": "start",
-            "description": "Start the service",
+            "description": "Start the instance",
             "usage": "[name]",
-            "options": []
+            "options": [
+                {
+                    "flag": "-h, --help",
+                    "description": "Show help message"
+                }
+            ]
         },
         {
             "name": "stop",
             "usage": "[name]",
-            "description": "Stop the service",
-            "options": []
+            "description": "Stop the instance",
+            "options": [
+                {
+                    "flag": "-h, --help",
+                    "description": "Show help message"
+                }
+            ]
         },
         {
             "name": "restart",
             "usage": "[name]",
-            "description": "Restart the service",
-            "options": []
+            "description": "Restart the instance",
+            "options": [
+                {
+                    "flag": "-h, --help",
+                    "description": "Show help message"
+                }
+            ]
         },
         {
             "name": "remove",
@@ -66,6 +102,40 @@
                 {
                     "flag": "-f, --force",
                     "description": "Force remove the service"
+                },
+                {
+                    "flag": "-h, --help",
+                    "description": "Show help message"
+                }
+            ]
+        },
+        {
+            "name": "status",
+            "usage": "[name]",
+            "description": "Restart the service",
+            "options": [
+                {
+                    "flag": "-h, --help",
+                    "description": "Show help message"
+                }
+            ]
+        },
+        {
+            "name": "panic",
+            "usage": "",
+            "description": "Reset all Certificates and restart the services",
+            "options": [
+                {
+                    "flag": "--no-restart",
+                    "description": "Do not restart the services"
+                },
+                {
+                    "flag": "-f, --force",
+                    "description": "Do not prompt for confirmation"
+                },
+                {
+                    "flag": "-h, --help",
+                    "description": "Show help message"
                 }
             ]
         }
