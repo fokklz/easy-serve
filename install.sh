@@ -13,8 +13,7 @@
 
 if [ -t 0 ]; then
     echo "Detected script is not being piped. Running setup.sh directly..."
-    chmod +x ./scripts/setup.sh
-    ./scripts/setup.sh
+    bash "scripts/setup.sh"
     exit 0
 fi
 

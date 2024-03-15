@@ -3,10 +3,15 @@
 DIR=$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")
 
 source "${DIR}/../globals.sh"
+source "${SCRIPTS_DIR}/args.sh"
+
+# ----------------------------------------------- \\
+# Start of the script
+# ----------------------------------------------- \\
 
 (
     cd "${ROOT}"
-    docker compose down >/dev/null 2>&1
+    docker compose down
 ) &
 loading_spinner "Stopping services..." "Stopped services"
 
@@ -27,10 +32,8 @@ ssh-keygen -t ed25519 -f "${SFTP_KEYS_DIR}/ssh_host_ed25519_key" -C "sftp.${DOMA
 # Ensure all instances are stopped
 for type in "${INSTANCE_ROOT}"/*; do
     if [[ -d "$type" ]]; then
-        # Get the type name
         type_name=$(basename "$type")
 
-        # Iterate over names
         for name in "$type_name"/*; do
             if [[ -d "$name" ]]; then
                 # Run stop.sh for each instance
@@ -41,22 +44,28 @@ for type in "${INSTANCE_ROOT}"/*; do
 done
 
 # Backup all instances
-if [ -d "${INSTANCE_ROOT}" ]; then
-    (
-        cd "${INSTANCE_ROOT}"
-        tar -czf "instances.tar.gz" * >/dev/null 2>&1
+if prompt_confirmation "Do you want to backup all instances?"; then
+    if [ -d "${INSTANCE_ROOT}" ]; then
+        (
+            # TODO: Add a real backup system
+            cd "${INSTANCE_ROOT}"
+            tar -czf "instances.tar.gz" * >/dev/null 2>&1
 
-        DATE=$(date +"%Y-%m-%d-%H-%M-%S")
+            DATE=$(date +"%Y-%m-%d-%H-%M-%S")
 
-        if [ -f "instances.tar.gz" ]; then
-            mv "instances.tar.gz" "${ROOT}/instances.${DATE}.tar.gz"
-        fi
-
-        rm -rf "${INSTANCE_ROOT}"
-        mkdir -p "${INSTANCE_ROOT}"
-    ) &
-    loading_spinner "Backing up and removing..." "Backed up and removed"
+            if [ -f "instances.tar.gz" ]; then
+                mv "instances.tar.gz" "${ROOT}/instances.${DATE}.tar.gz"
+            fi
+        ) &
+        loading_spinner "Backing up..." "Backed up instances"
+    fi
 fi
+
+(
+    rm -rf "${INSTANCE_ROOT}"
+    mkdir -p "${INSTANCE_ROOT}"
+) &
+loading_spinner "Removing instances..." "Removed instances"
 
 (
     cd "${ROOT}"

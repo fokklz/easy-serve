@@ -5,6 +5,24 @@
 # This file contains global variables and funcctions which are used to streamline the scripts
 
 SCRIPTS_DIR=$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")
+source "${SCRIPTS_DIR}/colors.sh"
+
+ARG_NAMES=()
+declare -A ARG_SPECS
+
+# Helper function to register arguments for a script to auto-prompt the user for missing arguments
+# the script will try to use a named validation function using `is_valid_${name}` to validate the input
+# if the validation function does not exist, the regex will be used to validate the input
+# if the regex & no function is not provided, the input will not be validated
+# a default value will be used if the user does not provide a value and turns the variable to be "required"
+function register_arg() {
+    local name="$1"
+
+    ARG_NAMES+=("$name")
+
+    ARG_SPECS["$name, default"]=$2
+    ARG_SPECS["$name, regex"]=$3
+}
 
 # Root directories
 ROOT=$(dirname "${SCRIPTS_DIR}")
@@ -27,92 +45,33 @@ CA_KEY="${CERT_ROOT}/ca.key"
 SFTP_USERS_FILE="${SFTP_ROOT}/users.conf"
 SFTP_KEYS_DIR="${SFTP_ROOT}/keys"
 
-source "${SCRIPTS_DIR}/colors.sh"
+# Instance information
+INDEX_FILE="${INSTANCE_ROOT}/index.json"
+
+# REGEX patterns
+
+# DOMAINS
+# The pattern matches domain names that consist of one or more segments separated by periods.
+# Each segment can contain alphanumeric characters and hyphens, but cannot start or end with a hyphen.
+# The top-level domain (TLD) must consist of two or more alphabetical characters.
+DOMAIN_REGEX="^(([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]*[a-zA-Z0-9])\.)*([A-Za-z0-9]|[A-Za-z0-9][A-Za-z0-9\-]*[A-Za-z0-9])\.[A-Za-z]{2,}$"
+
+# FOLDERS
+# The pattern matches folder names that consist of alphanumeric characters, underscores, and hyphens.
+# The folder name cannot be empty.
+FOLDER_REGEX="^[A-Za-z0-9_-]+$"
 
 if [ -f "${ROOT}/.env" ]; then
     source "${ROOT}/.env"
 fi
 
-# Contains all arguments passed to the script not starting with --
-ARGS=()
+CERT_COUNTRY="CH"
+CERT_STATE="Basel"
+CERT_CITY="Basel"
+CERT_ORGANIZATION="${DOMAIN//./-}"
 
-for arg in "$@"; do
-    if [[ ! "$arg" =~ ^-- ]]; then
-        ARGS+=("$arg")
-    else
-        IFS='=' read -r flag_name flag_value <<<"${arg:2}"
-        if [ -z "$flag_value" ]; then
-            flag_value=true
-        fi
-
-        flag_name="${flag_name//-/_}" # replace '-' with '_'
-        flag_name="${flag_name^^}"    # uppercase
-
-        declare -g "$flag_name"="$flag_value"
-    fi
-done
-
+source "${SCRIPTS_DIR}/validators.sh"
 source "${SCRIPTS_DIR}/functions.sh"
-# Assigns the arguments to the variables with the names provided
-function named_args() {
-    local i=0
-    local min_length=0
-    local usage="Usage: $0 "
-    local clean_args=()
-    local modifier=()
-
-    for arg in "${@}"; do
-        # apply modifier if present
-        if [[ "$arg" == *"|"* ]]; then
-            IFS='|' read -r arg modifier <<<"$arg"
-            modifier+=("${modifier,,}")
-        else
-            modifier+=("")
-        fi
-
-        # when the name is uppercase, it is required
-        if [[ "$arg" == *[[:upper:]]* ]]; then
-            ((min_length++))
-            usage+="<${arg,,}> "
-        else
-            usage+="[${arg,,}] "
-        fi
-
-        clean_args+=("$arg")
-    done
-
-    for name in "${clean_args[@]}"; do
-        if [ $i -ge ${#ARGS[@]} ] && [ $i -ge $min_length ]; then
-            break
-        elif [ $i -ge ${#ARGS[@]} ] && [ $i -le $min_length ]; then
-            while [ -z "$value" ]; do
-                read -p "Enter a value for ${name,,}: " input
-                if [[ "$input" =~ [[:alnum:]_-]+ ]]; then
-                    value="$input"
-                else
-                    echo "Invalid input. Please enter a value consisting of alphanumeric characters, hyphens, or underscores."
-                fi
-            done
-        else
-            value="${ARGS[$i]}"
-        fi
-
-        mod="${modifier[$i]}"
-
-        case "${mod}" in
-        "lower")
-            value="${value,,}"
-            ;;
-        "upper")
-            value="${value^^}"
-            ;;
-        esac
-
-        declare -g "${clean_args[$i]}=${value}"
-        unset value
-        ((i++))
-    done
-}
 
 ENSURE="$INSTANCE_ROOT $SFTP_KEYS_DIR $CLIENTS_CERT_DIR"
 

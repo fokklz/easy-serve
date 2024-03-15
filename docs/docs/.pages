@@ -1,0 +1,8 @@
+nav:
+  - index.md
+  - get-started
+  - command-overview.md
+  - template-overview.md
+  - commands
+  - Templates: templates-ref
+  - Other: other

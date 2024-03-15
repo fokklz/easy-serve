@@ -4,11 +4,30 @@
 #
 # Generates a CA certificate which will be used to sign client certificates
 # this is used for traefik dashboard authentication
+#
+# Flags:
+#  --force: force the creation of the CA certificate even if the certificate already exists
 
 DIR=$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")
 
 source "${DIR}/../globals.sh"
-source "${DIR}/vars.sh"
+source "${SCRIPTS_DIR}/args.sh"
+
+# ----------------------------------------------- \\
+# Start of the script
+# ----------------------------------------------- \\
+
+if [ -f "${CA_CERT}" ] || [ -f "${CA_KEY}" ]; then
+    if [[ $FLAG_FORCE = true ]]; then
+        (
+            rm -f "${CA_CERT}" "${CA_KEY}" >/dev/null 2>&1
+        ) &
+        loading_spinner "Removing existing CA for $(mark "${DOMAIN}")..." \
+            "Removed existing CA for $(mark "${DOMAIN}")"
+    else
+        error "CA certificate and key already exist, use --force to overwrite"
+    fi
+fi
 
 (
     openssl genrsa -out "${CA_KEY}" 4096 >/dev/null 2>&1

@@ -12,22 +12,31 @@ TEMP_DIR=$(mktemp -d)
 
 source "${DIR}/../globals.sh"
 
-if [ $# -lt 2 ]; then
-    error "Usage: $0 <username> <password>"
-fi
+register_arg "user" "" "${FOLDER_REGEX}"
+register_arg "out"
 
-USER=$(echo "${1}" | awk '{print tolower($0)}')
-PASSWORD=$2
+source "${SCRIPTS_DIR}/args.sh"
 
+# ----------------------------------------------- \\
+# Start of the script
+# ----------------------------------------------- \\
+
+# ensure workspace exists
 WORKSPACE="${TEMP_DIR}/workspace"
 if [ ! -d "${WORKSPACE}" ]; then
     mkdir -p "${WORKSPACE}"
 fi
+
 (
     cd "${WORKSPACE}"
     if [ ! -d ".vscode" ]; then
         mkdir -p ".vscode"
     fi
+
+    # include the user's private key in the workspace
+    cp "${SFTP_KEYS_DIR}/${ARG_USER}_id_ed25519_key" "./.vscode/${ARG_USER}_id_ed25519_key"
+
+    # -- .vscode/extensions.json --
 
     cat >".vscode/extensions.json" <<EOF
 {
@@ -35,14 +44,16 @@ fi
 }
 EOF
 
+    # -- .vscode/sftp.json --
+
     cat >".vscode/sftp.json" <<EOF
 {
-  "name": "${USER} - ${DOMAIN}",
+  "name": "${ARG_USER} - ${DOMAIN}",
   "host": "sftp.${DOMAIN}",
   "protocol": "sftp",
   "port": ${SFTP_PORT:-22},
-  "username": "${USER}",
-  "password": "${PASSWORD}",
+  "username": "${ARG_USER}",
+  "privateKeyPath": ".vscode/${ARG_USER}_id_ed25519_key",
   "remotePath": "webroot",
   "uploadOnSave": true,
   "downloadOnOpen": true,
@@ -53,19 +64,22 @@ EOF
   },
   "ignore": [
       ".vscode/sftp.json",
-      ".vscode/extensions.json"
+      ".vscode/extensions.json",
+      ".vscode/${ARG_USER}_id_ed25519_key"
   ]
 }
 EOF
 
-    if [ -f "${OUT}/workspace.zip" ]; then
-        rm -f "${OUT}/workspace.zip"
+    if [ -f "${ARG_OUT}/workspace.zip" ]; then
+        rm -f "${ARG_OUT}/workspace.zip"
     fi
 
+    # ZIP the created workspace and move it to the output directory
     zip -r -q "workspace.zip" .
-    mv "workspace.zip" "${OUT}/workspace.zip"
+    mv "workspace.zip" "${ARG_OUT}/workspace.zip"
 ) &
-loading_spinner "Creating workspace for $(mark "$USER")..." \
-    "Created workspace for $(mark "$USER")"
+loading_spinner "Creating workspace for $(mark "$ARG_USER")..." \
+    "Created workspace for $(mark "$ARG_USER")"
 
+# cleanup
 rm -rf "${TEMP_DIR}"

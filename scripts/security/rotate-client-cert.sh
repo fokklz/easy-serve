@@ -7,7 +7,11 @@
 # the PFX file can then be used to authenticate with the traefik dashboard when using curl commands
 #
 # for example:
-# curl --cert-type P12 --cert $(cat ${SCRIPTS_DIR}/cert) https://traefik.fokklz.dev/api/rawdata
+# curl --cert-type P12 --cert $(cat "${SEC_CERT}") https://traefik.fokklz.dev/api/rawdata
+#
+# Arguments: -
+#
+# Flags: -
 
 DIR=$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")
 source "${DIR}/../globals.sh"

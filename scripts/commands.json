@@ -1,0 +1,143 @@
+{
+    "version": "1.0.0",
+    "description": "Welcome to the EasyService CLI\\nStart by creating a new instance of a template or manage existing ones.",
+    "globalOptions": [
+        {
+            "flag": "-h, --help",
+            "description": "Show help message"
+        },
+        {
+            "flag": "-v, --version",
+            "description": "Show version information"
+        }
+    ],
+    "commands": [
+        {
+            "name": "create",
+            "description": "Create a new service",
+            "usage": "[<type>] <domain> [name]",
+            "options": [
+                {
+                    "flag": "-f, --force",
+                    "description": "Overwrite existing instance"
+                },
+                {
+                    "flag": "-h, --help",
+                    "description": "Show help message"
+                }
+            ]
+        },
+        {
+            "name": "create-client",
+            "description": "Create a new client",
+            "usage": "<name>",
+            "options": [
+                {
+                    "flag": "--remove-only",
+                    "description": "Only remove the client"
+                },
+                {
+                    "flag": "-f, --force",
+                    "description": "Overwrite existing client"
+                },
+                {
+                    "flag": "-h, --help",
+                    "description": "Show help message"
+                }
+            ]
+        },
+        {
+            "name": "manage",
+            "description": "Manage an existing instance",
+            "usage": "[name]",
+            "options": [
+                {
+                    "flag": "-c, --client",
+                    "description": "Manage clients instead of instances"
+                },
+                {
+                    "flag": "-h, --help",
+                    "description": "Show help message"
+                }
+            ]
+        },
+        {
+            "name": "start",
+            "description": "Start the instance",
+            "usage": "[name]",
+            "options": [
+                {
+                    "flag": "-h, --help",
+                    "description": "Show help message"
+                }
+            ]
+        },
+        {
+            "name": "stop",
+            "usage": "[name]",
+            "description": "Stop the instance",
+            "options": [
+                {
+                    "flag": "-h, --help",
+                    "description": "Show help message"
+                }
+            ]
+        },
+        {
+            "name": "restart",
+            "usage": "[name]",
+            "description": "Restart the instance",
+            "options": [
+                {
+                    "flag": "-h, --help",
+                    "description": "Show help message"
+                }
+            ]
+        },
+        {
+            "name": "remove",
+            "usage": "[name]",
+            "description": "Remove the service",
+            "options": [
+                {
+                    "flag": "-f, --force",
+                    "description": "Force remove the service"
+                },
+                {
+                    "flag": "-h, --help",
+                    "description": "Show help message"
+                }
+            ]
+        },
+        {
+            "name": "status",
+            "usage": "[name]",
+            "description": "Restart the service",
+            "options": [
+                {
+                    "flag": "-h, --help",
+                    "description": "Show help message"
+                }
+            ]
+        },
+        {
+            "name": "panic",
+            "usage": "",
+            "description": "Reset all Certificates and restart the services",
+            "options": [
+                {
+                    "flag": "--no-restart",
+                    "description": "Do not restart the services"
+                },
+                {
+                    "flag": "-f, --force",
+                    "description": "Do not prompt for confirmation"
+                },
+                {
+                    "flag": "-h, --help",
+                    "description": "Show help message"
+                }
+            ]
+        }
+    ]
+}

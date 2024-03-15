@@ -19,7 +19,7 @@ fi
     sudo apt-get update
     sudo apt-get install -y zip curl wget jq
 
-    # Check if docker command is already installed
+    # Check if docker & docker compose command is already installed
     if ! command -v docker &>/dev/null || ! command -v docker compose &>/dev/null; then
         echo "docker command could not be found, installing..."
         curl -sSL https://get.docker.com/ | CHANNEL=stable sh
@@ -69,7 +69,7 @@ ask_input "Please enter the IP address for the HTTP server" '^[0-9]+\.[0-9]+\.[0
 
 ask_input "Please enter the IP address for the SFTP server" '^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$' "${http_ip_address}" sftp_ip_address
 
-ask_input "Please enter the port for the SFTP server. Recommended to change" '^[0-9]+$' "22" sftp_port
+ask_input "Please enter the port for the SFTP server. Recommended to change" '^[0-9]+$' "2233" sftp_port
 
 ask_input "Please enter the domain name" '^[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$' "" set_domain
 
@@ -80,13 +80,18 @@ fi
 cat >"${ROOT}/.env" <<EOF
 HTTP_IP_ADDRESS="${http_ip_address}"
 SFTP_IP_ADDRESS="${sftp_ip_address}"
+
+HTTP_PORT="80"
+HTTPS_PORT="443"
 SFTP_PORT="${sftp_port}"
+
 DOMAIN="${set_domain}"
 EOF
 
 bash "${SCRIPTS_DIR}/security/gen-ca-cert.sh"
-bash "${SCRIPTS_DIR}/security/gen-host-key.sh"
 bash "${SCRIPTS_DIR}/security/rotate-client-cert.sh"
+
+bash "${SCRIPTS_DIR}/sftp/gen-host-key.sh"
 
 (
     cd "${ROOT}"
@@ -94,12 +99,12 @@ bash "${SCRIPTS_DIR}/security/rotate-client-cert.sh"
 ) &
 loading_spinner "Starting..." "Started!"
 
+# create a symlink to the easy-serve.sh script
+# allowing the user to use the 'easy-serve' command
 chmod +x "${ROOT}/easy-serve.sh"
+ln -sf "${ROOT}/easy-serve.sh" /usr/local/bin/easy-serve
 
-if [ ! -f /usr/local/bin/easy-serve ]; then
-    ln -s "${ROOT}/easy-serve.sh" /usr/local/bin/easy-serve
-fi
-
+# print a final success block outlining the next steps
 echo -e "Successfully installed $(mark "easy-serve") for $(mark "${set_domain}")!"
 echo -e "You can now use the $(mark "easy-serve") command to manage your instances."
 echo -e "Run $(mark "easy-serve --help") for more information."

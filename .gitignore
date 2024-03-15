@@ -4,9 +4,13 @@
 certs
 instances
 
+traefik/evtl-redirect.yaml
+
 **/keys
 **/users.conf
 
 .vscode
 .env
 .env.*
+
+docs/site
