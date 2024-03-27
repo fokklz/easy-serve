@@ -117,12 +117,12 @@ function valid_fn_wrapper() {
     fi
 
     if declare -f "$fn_name" >/dev/null; then
-        echo $(eval "$fn_name \"$input\"")
+        echo "$(eval "$fn_name \"$input\"")"
     else
         if [[ -z "$input" ]]; then
             echo "Invalid input"
         else
-            echo 0
+            echo "0"
         fi
     fi
 }
@@ -234,14 +234,12 @@ function ask_input() {
     local variable_name="$4"
     local user_input=""
 
-    while true; do
+    while [ -z "$user_input" ]; do
 
-        # If there is a default value and it starts with a backslash to exscape a variable
+        # If there is a default value
         if ! [[ -z "$default_value" ]]; then
-            if [[ "$default_value" =~ ^\$.+ ]]; then
-                default_value="${default_value//\\/}"
-                default_value="$(eval echo "$default_value")"
-            fi
+            # Evaluate the default value to allow for variable substitution
+            default_value="$(eval echo "$default_value")"
         fi
 
         echo -n "${prompt_message}"
@@ -257,14 +255,14 @@ function ask_input() {
         [[ -z "$user_input" && -n "$default_value" ]] && user_input="$default_value"
 
         # Check if the input matches the regex pattern
-        if [[ $user_input =~ $regex_pattern ]]; then
-            declare -g "$variable_name=$user_input"
-            break
-        else
-            echo "Invalid input for ${variable_name}, please try again." >&2
+        if ! [[ $user_input =~ $regex_pattern ]]; then
+            echo "Invalid input for ${variable_name}, please try again." >&2 >/dev/tty
             user_input="" # Reset user_input to show default value prompt again if needed
         fi
     done
+
+    declare -g "$variable_name=$user_input"
+    export "$variable_name"
 }
 
 # Function to prompt the user for confirmation will eval to true if the force flag is set

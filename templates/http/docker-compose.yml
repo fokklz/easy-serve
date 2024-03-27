@@ -5,15 +5,19 @@ services:
     image: httpd:2.4
     restart: unless-stopped
     labels:
-      - traefik.enable=true
-      - traefik.http.routers.${INSTANCE_NAME}.rule=Host(`${INSTANCE_DOMAIN}`)
-      - traefik.http.routers.${INSTANCE_NAME}.entrypoints=websecure
-      - traefik.http.routers.${INSTANCE_NAME}.tls.certresolver=letsencrypt
+      - 'traefik.enable=true'
+      - 'traefik.http.routers.${INSTANCE_NAME}.rule=Host(`${INSTANCE_DOMAIN}`)'
+      - 'traefik.http.routers.${INSTANCE_NAME}.entrypoints=websecure'
+      - 'traefik.http.routers.${INSTANCE_NAME}.tls.certresolver=letsencrypt'
+      - 'traefik.http.routers.${INSTANCE_NAME}.service=${INSTANCE_NAME}'
+      - 'traefik.http.services.${INSTANCE_NAME}.loadbalancer.server.port=80'
+      - 'traefik.docker.network=${DOCKER_NETWORK}'
     volumes:
       - ./webroot:/usr/local/apache2/htdocs/
     networks:
-      - traefik_network
+      - traefik-network
 
 networks:
-  traefik_network:
+  traefik-network:
+    name: '${DOCKER_NETWORK}'
     external: true

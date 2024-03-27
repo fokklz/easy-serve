@@ -1,0 +1,23 @@
+#!/bin/sh
+
+COMMIT_MSG_FILE=$1
+COMMIT_SOURCE=$2
+SHA1=$3
+
+# Path to the .COMMIT file
+COMMIT_CONTENT=$(cat .COMMIT)
+
+# Temporary file to hold the new commit message
+TEMP=$(mktemp)
+
+# Check if the commit is a merge commit, avoid adding custom text to merge commits
+if [ "$COMMIT_SOURCE" != "merge" ]; then
+    # Prepend the content of .COMMIT to the commit message
+    echo -e "\n\n${COMMIT_CONTENT}$(cat $COMMIT_MSG_FILE)" >$TEMP
+    # Move the temp file to the original commit message file
+    mv $TEMP $COMMIT_MSG_FILE
+else
+    # If it's a merge commit, just copy over the original commit message
+    cp $COMMIT_MSG_FILE $TEMP
+    mv $TEMP $COMMIT_MSG_FILE
+fi

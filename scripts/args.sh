@@ -44,7 +44,7 @@ for arg in "${ARG_NAMES[@]}"; do
     message="Please enter a ${arg}"
     default="${ARG_SPECS[$arg, default]}"
     regex="${ARG_SPECS[$arg, regex]}"
-    required="${ARG_SPECS[$arg, required]}"
+    message="${ARG_SPECS[$arg, message]:-$message}"
 
     validate_fn="is_valid_${arg}"
 
@@ -53,15 +53,17 @@ for arg in "${ARG_NAMES[@]}"; do
     if [[ $NO_PROMPT != true ]] && [[ "$(eval echo "\$NO_PROMPT_$arg")" != true ]]; then
         valid_state=$(valid_fn_wrapper "$validate_fn" "$value" "$regex")
         try_index=0
-        while [[ "$valid_state" != 0 ]]; do
+        while [[ $valid_state != 0 ]]; do
             if [[ "$try_index" -gt 0 ]]; then
                 message="$valid_state $message"
             fi
 
             ask_input "$message" "$regex" "$default" value
+
             valid_state=$(valid_fn_wrapper "$validate_fn" "$value" "$regex")
+            ((try_index++))
         done
-    else
+
         if [[ -z "$value" ]]; then
             value="$default"
         fi

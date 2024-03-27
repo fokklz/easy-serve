@@ -1,0 +1,10 @@
+#!/bin/sh
+
+# Define the path to the .COMMIT file
+COMMIT_MSG_FILE=".COMMIT"
+
+# Check if .COMMIT file exists and is not empty
+if [ -s $COMMIT_MSG_FILE ]; then
+    # EMPTY the .COMMIT file
+    echo "" >$COMMIT_MSG_FILE
+fi

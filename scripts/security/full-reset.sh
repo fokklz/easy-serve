@@ -15,7 +15,7 @@ source "${SCRIPTS_DIR}/args.sh"
 ) &
 loading_spinner "Stopping services..." "Stopped services"
 
-bash "${DIR}/../security/panic.sh" --no-restart --force
+bash "${DIR}/panic.sh" --no-restart --force
 
 # Remove all volumes
 yq e ".services.${COMPOSE_SFTP_SERVICE}.volumes = [\"./sftp/keys/ssh_host_ed25519_key:/etc/ssh/ssh_host_ed25519_key:ro\", \"./sftp/users.conf:/etc/sftp/users.conf:ro\"]" -i "${COMPOSE_FILE}"
@@ -30,14 +30,23 @@ mkdir -p "${SFTP_KEYS_DIR}"
 ssh-keygen -t ed25519 -f "${SFTP_KEYS_DIR}/ssh_host_ed25519_key" -C "sftp.${DOMAIN}" -P "" >/dev/null 2>&1
 
 # Ensure all instances are stopped
-for type in "${INSTANCE_ROOT}"/*; do
+for type in "$INSTANCE_ROOT"/*; do
+    echo "Working on: $type"
     if [[ -d "$type" ]]; then
         type_name=$(basename "$type")
 
-        for name in "$type_name"/*; do
+        # Loop through each instance within the type
+        for name in "$type"/*; do
             if [[ -d "$name" ]]; then
-                # Run stop.sh for each instance
-                bash "${INSTANCE_ROOT}/${type_name}/${name}/stop.sh"
+                # Check if stop.sh script exists and is executable
+                stop_script="$name/stop.sh"
+                if [[ -x "$stop_script" ]]; then
+                    echo "Stopping instance: $name"
+                    # Run stop.sh for each instance
+                    bash "$stop_script"
+                else
+                    echo "Warning: stop script not found or not executable for instance: $name"
+                fi
             fi
         done
     fi
@@ -64,6 +73,7 @@ fi
 (
     rm -rf "${INSTANCE_ROOT}"
     mkdir -p "${INSTANCE_ROOT}"
+    rm -f "${INDEX_FILE}"
 ) &
 loading_spinner "Removing instances..." "Removed instances"
 
@@ -73,4 +83,4 @@ loading_spinner "Removing instances..." "Removed instances"
 ) &
 loading_spinner "Starting services..." "Started services"
 
-bash "${DIR}/../security/gen-client-cert.sh" "admin"
+bash "${DIR}/client-cert.sh" "admin"

@@ -5,7 +5,7 @@
 # This file contains global variables and funcctions which are used to streamline the scripts
 
 SCRIPTS_DIR=$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")
-source "${SCRIPTS_DIR}/colors.sh"
+source "${SCRIPTS_DIR}/utils/colors.sh"
 
 ARG_NAMES=()
 declare -A ARG_SPECS
@@ -22,6 +22,7 @@ function register_arg() {
 
     ARG_SPECS["$name, default"]=$2
     ARG_SPECS["$name, regex"]=$3
+    ARG_SPECS["$name, message"]=$4
 }
 
 # Root directories
@@ -46,7 +47,7 @@ SFTP_USERS_FILE="${SFTP_ROOT}/users.conf"
 SFTP_KEYS_DIR="${SFTP_ROOT}/keys"
 
 # Instance information
-INDEX_FILE="${INSTANCE_ROOT}/index.json"
+INDEX_FILE="${SCRIPTS_DIR}/index.json"
 
 # REGEX patterns
 
