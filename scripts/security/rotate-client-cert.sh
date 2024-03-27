@@ -16,7 +16,7 @@
 DIR=$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")
 source "${DIR}/../globals.sh"
 
-output=$(bash "${DIR}/gen-client-cert.sh" system --force --plain)
+output=$(bash "${DIR}/client-cert.sh" system --force --plain)
 
 pfx_path=$(echo "$output" | grep -oP 'PFX Certificate: \K.*')
 password=$(echo "$output" | grep -oP 'Password: \K.*')

@@ -1,0 +1,28 @@
+{
+  // See https://go.microsoft.com/fwlink/?LinkId=733558
+  // for the documentation about the tasks.json format
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Setup Git Hooks",
+      "type": "shell",
+      "command": ".\\.vscode\\setup-hooks.ps1",
+      "problemMatcher": [],
+      "options": {
+        "shell": {
+          "executable": "powershell.exe",
+          "args": ["-NoProfile", "-ExecutionPolicy", "Bypass", "-File"]
+        }
+      },
+      "runOptions": {
+        "runOn": "folderOpen"
+      }
+    },
+    {
+      "label": "Undo Commit",
+      "type": "shell",
+      "command": "git reset --soft HEAD~1",
+      "problemMatcher": []
+    }
+  ]
+}

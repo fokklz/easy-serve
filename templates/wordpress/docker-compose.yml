@@ -5,32 +5,43 @@ services:
     image: wordpress:latest
     restart: unless-stopped
     environment:
-      WORDPRESS_DB_HOST: mysql
+      WORDPRESS_DB_HOST: database
       WORDPRESS_DB_USER: ${INSTANCE_NAME}
-      WORDPRESS_DB_PASSWORD: ${MYSQL_PASSWORD}
+      WORDPRESS_DB_PASSWORD: ${INSTANCE_MYSQL_PASSWORD}
       WORDPRESS_DB_NAME: ${INSTANCE_NAME}
     labels:
-      - traefik.enable=true
-      - traefik.http.routers.${INSTANCE_NAME}.rule=Host(`${INSTANCE_DOMAIN}`)
-      - traefik.http.routers.${INSTANCE_NAME}.entrypoints=websecure
-      - traefik.http.routers.${INSTANCE_NAME}.tls.certresolver=letsencrypt
+      - 'traefik.enable=true'
+      - 'traefik.http.routers.${INSTANCE_NAME}.rule=Host(`${INSTANCE_DOMAIN}`)'
+      - 'traefik.http.routers.${INSTANCE_NAME}.entrypoints=websecure'
+      - 'traefik.http.routers.${INSTANCE_NAME}.tls.certresolver=letsencrypt'
+      - 'traefik.http.routers.${INSTANCE_NAME}.service=${INSTANCE_NAME}'
+      - 'traefik.http.services.${INSTANCE_NAME}.loadbalancer.server.port=80'
+      - 'traefik.docker.network=${DOCKER_NETWORK}'
     volumes:
       - ./webroot:/var/www/html/
+      - ./custom.ini:/usr/local/etc/php/conf.d/php.custom.ini
     depends_on:
-      - mysql
+      database:
+        condition: service_healthy
     networks:
-      - traefik_network
+      - traefik-network
       - wordpress
 
-  mysql:
+  database:
     image: mysql:latest
+    restart: unless-stopped
     environment:
-      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${INSTANCE_MYSQL_ROOT_PASSWORD}
       MYSQL_DATABASE: ${INSTANCE_NAME}
       MYSQL_USER: ${INSTANCE_NAME}
-      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      MYSQL_PASSWORD: ${INSTANCE_MYSQL_PASSWORD}
     volumes:
       - mysql-data:/var/lib/mysql
+    healthcheck:
+      test: [ "CMD", "mysqladmin", "ping", "-h", "localhost" ]
+      timeout: 20s
+      retries: 10
+      interval: 10s
     networks:
       - wordpress
 
@@ -39,5 +50,6 @@ volumes:
 
 networks:
   wordpress: {}
-  traefik_network:
+  traefik-network:
+    name: '${DOCKER_NETWORK}'
     external: true

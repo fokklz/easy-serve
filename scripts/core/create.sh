@@ -12,7 +12,6 @@
 DIR=$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")
 
 source "${DIR}/../globals.sh"
-source "${SCRIPTS_DIR}/fuzzy.sh"
 
 NO_PROMPT_TEMPLATE=true
 
@@ -21,10 +20,12 @@ register_arg "domain" "" "${FOLDER_REGEX}|${DOMAIN_REGEX}"
 register_arg "name" "\${ARG_DOMAIN%%.*}" "${FOLDER_REGEX}"
 
 if [ ! -f "${INDEX_FILE}" ]; then
-    echo '{"names": {}, "domains": {}}' >"$INDEX_FILE"
+    echo '{"names": {}, "domains": {}, "users": {}}' >"$INDEX_FILE"
 fi
 
 source "${SCRIPTS_DIR}/args.sh"
+
+source "${SCRIPTS_DIR}/utils/fuzzy.sh"
 
 # ----------------------------------------------- \\
 # Start of the script
@@ -64,7 +65,7 @@ mkdir -p "$INSTANCE"
 ) &
 loading_spinner "Initializing ${TEMPLATE}..." "Template files Coppied to ${TEMPLATE}/${ARG_NAME}"
 
-bash "${TEMPLATE}/install.sh" "${ARG_DOMAIN}" "${ARG_NAME}" "${INSTANCE}" >"${INSTANCE}/.env"
+bash "${TEMPLATE}/install.sh" "${ARG_DOMAIN}" "${ARG_NAME}" "${DOCKER_NETWORK}" >"${INSTANCE}/.env"
 
 (
     cd "${INSTANCE}" || exit
@@ -142,12 +143,27 @@ EOF
 loading_spinner "Creating instance scripts for $(mark "${ARG_NAME}")..." "Created instance scripts for $(mark "${ARG_NAME}")"
 
 # store ARG_DOMAIN and name in the index file
-jq --arg name "$ARG_NAME" --arg instance "$INSTANCE" --arg ARG_DOMAIN "$ARG_DOMAIN" '.names += {($name): $instance} | .domains += {($ARG_DOMAIN): $instance}' "$INDEX_FILE" >"$INDEX_FILE.tmp" && mv "$INDEX_FILE.tmp" "$INDEX_FILE"
+jq --arg name "$ARG_NAME" --arg instance "$INSTANCE" --arg domain "$ARG_DOMAIN" '.names += {($name): $instance} | .domains += {($domain): $instance}' "$INDEX_FILE" >"$INDEX_FILE.tmp" && mv "$INDEX_FILE.tmp" "$INDEX_FILE"
 
 if [ "$NO_SFTP" != true ]; then
-    bash "${DIR}/../sftp/add-user.sh" "${ARG_NAME}" "${INSTANCE}/webroot"
+    bash "${DIR}/../sftp/add-user.sh" "${ARG_NAME}" "${INSTANCE}"
 fi
 
 bash "${INSTANCE}/start.sh"
 
 echo -e "Serving $(mark "${ARG_NAME}") at $(mark "https://${ARG_DOMAIN}")"
+
+if [ "$NO_SFTP" != true ]; then
+    # check if $ARG_FOLDER includes wordpress (case insensitive)
+    if [[ "${INSTANCE,,}" == *"wordpress"* ]]; then
+        # WordPress-specific adjustments
+        find "${INSTANCE}/webroot" -type f -exec chmod 644 {} \;
+        find "${INSTANCE}/webroot" -type d -exec chmod 755 {} \;
+
+        # Special handling for wp-config.php
+        chmod 600 "${INSTANCE}/webroot/wp-config.php" >/dev/null 2>&1
+
+        # Specific permissions for uploads directory
+        chmod -R 755 "${INSTANCE}/webroot/wp-content/uploads" >/dev/null 2>&1
+    fi
+fi

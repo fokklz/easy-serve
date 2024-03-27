@@ -21,9 +21,7 @@ register_arg "name" "" "${FOLDER_REGEX}"
 
 source "${SCRIPTS_DIR}/args.sh"
 
-# ----------------------------------------------- \\
-# Start of the script
-# ----------------------------------------------- \\
+source "${SCRIPTS_DIR}/utils/fuzzy.sh"
 
 if [ -z "${ARG_NAME}" ]; then
     read -r ARG_NAME <<<$(select_instance)
@@ -41,6 +39,10 @@ fi
 INSTANCE=$(get_instance "${TARGET_TYPE}" "${ARG_NAME}")
 
 source "${INSTANCE}/.env"
+
+# ----------------------------------------------- \\
+# Start of the script
+# ----------------------------------------------- \\
 
 if prompt_confirmation "Are you sure you want to uninstall the instance ${INSTANCE_NAME} served at ${INSTANCE_DOMAIN}?"; then
     bash "${INSTANCE}/stop.sh"

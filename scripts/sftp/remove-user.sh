@@ -14,9 +14,15 @@ DIR=$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")
 
 source "${DIR}/../globals.sh"
 
+if [ ! -d "${INSTANCE_ROOT}" ]; then
+    error "Create instances before adding sftp users"
+fi
+
 register_arg "user" "" "${FOLDER_REGEX}"
 
 source "${SCRIPTS_DIR}/args.sh"
+
+TARGET_FOLDER=$(jq -r --arg user "$ARG_USER" '.users[$user]' "$INDEX_FILE")
 
 # ----------------------------------------------- \\
 # Start of the script
@@ -33,8 +39,14 @@ if [ -f "${SFTP_USERS_FILE}" ] && grep -q "^$ARG_USER:" "${SFTP_USERS_FILE}"; th
             fi
         done
 
+        # remove the user's workspace zip file
+        if [[ -f "${TARGET_FOLDER}/workspace_${ARG_USER}.zip" ]]; then
+            rm -f "${TARGET_FOLDER}/workspace_${ARG_USER}.zip"
+        fi
+
         # remove the user from the user file
         sed -i "/^$ARG_USER:/d" "${SFTP_USERS_FILE}"
+        jq --arg user "$ARG_USER" 'del(.users[$user])' "$INDEX_FILE" >"$INDEX_FILE.tmp" && mv "$INDEX_FILE.tmp" "$INDEX_FILE"
 
         # remove the user's key
         if [ -f "${SFTP_KEYS_DIR}/${USER}_id_ed25519_key" ]; then

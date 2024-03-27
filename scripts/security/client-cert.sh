@@ -66,6 +66,8 @@ if [[ $FLAG_REMOVE_ONLY = true ]]; then
 fi
 
 (
+    mkdir -p "${CLIENT_SUB_DIR}"
+
     # Generate the client key and certificate
     openssl genrsa -out "${CLIENT_KEY}" 4096 >/dev/null 2>&1
     openssl req -new -key "${CLIENT_KEY}" -out "${CLIENT_CSR}" -subj "/C=${CERT_COUNTRY}/ST=${CERT_STATE}/L=${CERT_CITY}/O=${CERT_ORGANIZATION}/CN=${CERT_CN}" >/dev/null 2>&1

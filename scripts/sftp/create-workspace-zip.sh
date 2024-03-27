@@ -12,6 +12,10 @@ TEMP_DIR=$(mktemp -d)
 
 source "${DIR}/../globals.sh"
 
+if [ ! -d "${INSTANCE_ROOT}" ]; then
+    error "Create instances before adding sftp users"
+fi
+
 register_arg "user" "" "${FOLDER_REGEX}"
 register_arg "out"
 
@@ -76,7 +80,7 @@ EOF
 
     # ZIP the created workspace and move it to the output directory
     zip -r -q "workspace.zip" .
-    mv "workspace.zip" "${ARG_OUT}/workspace.zip"
+    mv "workspace.zip" "${ARG_OUT}/workspace_${ARG_USER}.zip"
 ) &
 loading_spinner "Creating workspace for $(mark "$ARG_USER")..." \
     "Created workspace for $(mark "$ARG_USER")"

@@ -9,8 +9,11 @@ traefik/evtl-redirect.yaml
 **/keys
 **/users.conf
 
-.vscode
+.vscode/sftp.json
 .env
 .env.*
+.COMMIT
 
 docs/site
+
+scripts/index.json

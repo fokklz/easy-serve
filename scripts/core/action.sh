@@ -11,7 +11,6 @@
 DIR=$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")
 
 source "${DIR}/../globals.sh"
-source "${DIR}/../fuzzy.sh"
 
 NO_PROMPT_NAME=true
 
@@ -21,6 +20,8 @@ register_arg "name" "" "${FOLDER_REGEX}"
 EXPANSION=${@:3}
 
 source "${SCRIPTS_DIR}/args.sh"
+
+source "${SCRIPTS_DIR}/utils/fuzzy.sh"
 
 # ----------------------------------------------- \\
 # Start of the script

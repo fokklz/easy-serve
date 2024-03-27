@@ -11,14 +11,12 @@ entryPoints:
   sftp:
     address: ':22'
 
-docker:
-  network: traefik_network
-
 providers:
   file:
-    filename: /dynamic.yaml
+    filename: /etc/traefik/dynamic.yaml
+    watch: true
   docker:
-    endpoint: 'unix:///var/run/docker.sock'
+    endpoint: '${DOCKER_ENDPOINT}'
     exposedByDefault: false
 
 api:
@@ -32,7 +30,7 @@ log:
 certificatesResolvers:
   letsencrypt:
     acme:
-      email: 'not-configured@no-reply.com' # REPLACE: Email
+      email: '${ACME_EMAIL}'
       storage: '/letsencrypt/acme.json'
       httpChallenge:
         entryPoint: 'web'
